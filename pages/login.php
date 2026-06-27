@@ -58,15 +58,22 @@ declare(strict_types=1);
             </div>
         <?php endif; ?>
 
-        <form method="post" action="<?= e($action) ?>">
+        <form id="loginForm" method="post" action="<?= e($action) ?>" novalidate>
             <input type="hidden" name="csrf_token" value="<?= $csrf ?>">
             <div class="mb-3">
                 <label class="form-label fw-bold" for="nik">NIK</label>
-                <input class="form-control" id="nik" name="nik" value="<?= $nik ?>" inputmode="numeric" maxlength="16" placeholder="Masukkan NIK 16 digit" required>
+                <input class="form-control" id="nik" name="nik" value="<?= $nik ?>" inputmode="numeric" maxlength="16" pattern="\d{16}" placeholder="Masukkan NIK 16 digit" required>
+                <div class="invalid-feedback">NIK wajib 16 digit angka.</div>
             </div>
             <div class="mb-3">
                 <label class="form-label fw-bold" for="password">Password</label>
-                <input class="form-control" id="password" name="password" type="password" placeholder="Masukkan password" required>
+                <div class="input-group">
+                    <input class="form-control" id="password" name="password" type="password" placeholder="Masukkan password" required>
+                    <button class="btn btn-outline-secondary" id="togglePassword" type="button" aria-label="Tampilkan password">
+                        <i class="bi bi-eye"></i>
+                    </button>
+                    <div class="invalid-feedback">Password wajib diisi.</div>
+                </div>
             </div>
             <button class="btn btn-primary w-100 py-2 fw-bold" type="submit">Masuk</button>
         </form>
@@ -77,5 +84,6 @@ declare(strict_types=1);
     </footer>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="<?= e(urlFor('/pages/login.js')) ?>"></script>
 </body>
 </html>

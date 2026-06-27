@@ -259,9 +259,9 @@ CREATE TABLE `users` (
 --
 
 INSERT INTO `users` (`id`, `kode_user`, `nik`, `nama_lengkap`, `email`, `no_hp`, `password_hash`, `role`, `status_akun`, `foto_profil`, `created_at`, `updated_at`) VALUES
-(1, 'RT-001', '0000000000000001', 'Bapak Ketua RT', 'rt@rt.local', '081111111111', '$2y$10$PLACEHOLDER_GANTI_HASH_INI_DENGAN_BCRYPT_ASLI_DARI_PHP_1', 'rt', 'aktif', NULL, '2026-06-27 04:55:05', '2026-06-27 04:55:05'),
-(2, 'DRT-00001', '0000000000000002', 'Administrator RT', 'admin@rt.local', '082222222222', '$2y$10$PLACEHOLDER_GANTI_HASH_INI_DENGAN_BCRYPT_ASLI_DARI_PHP_2', 'admin', 'aktif', NULL, '2026-06-27 04:55:05', '2026-06-27 04:55:05'),
-(3, 'PTG-00001', '0000000000000003', 'Petugas Satu', 'petugas1@rt.local', '083333333333', '$2y$10$PLACEHOLDER_GANTI_HASH_INI_DENGAN_BCRYPT_ASLI_DARI_PHP_3', 'petugas', 'aktif', NULL, '2026-06-27 04:55:05', '2026-06-27 04:55:05');
+(1, 'RT-001', '0000000000000001', 'Bapak Ketua RT', 'rt@rt.local', '081111111111', '$2y$10$dUHUjrbd7xCzeaP5gESidOeBfJDwUWT2g/.LZotRFYE9Yh3gqH1iu', 'rt', 'aktif', NULL, '2026-06-27 04:55:05', '2026-06-27 04:55:05'),
+(2, 'DRT-00001', '0000000000000002', 'Administrator RT', 'admin@rt.local', '082222222222', '$2y$10$BFjud4yQFfHiaQfqxmwU5O6RT2QMWqfg8U/pIi.XfIcTGHwvGKrqy', 'admin', 'aktif', NULL, '2026-06-27 04:55:05', '2026-06-27 04:55:05'),
+(3, 'PTG-00001', '0000000000000003', 'Petugas Satu', 'petugas1@rt.local', '083333333333', '$2y$10$yvr05iim2s9AwPDRZBsrk.JN0A7BexCbPxhg5wy8pBM94/7iW4gC6', 'petugas', 'aktif', NULL, '2026-06-27 04:55:05', '2026-06-27 04:55:05');
 
 -- --------------------------------------------------------
 

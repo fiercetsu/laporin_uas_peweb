@@ -12,7 +12,7 @@ function isWebAuthPage(): bool
     }
 
     $path = normalizeWebAuthPath($path);
-    return in_array($path, ['/', '/login', '/register', '/dashboard', '/logout', '/laporan', '/laporan-saya', '/edit-laporan', '/hapus-laporan'], true);
+    return in_array($path, ['/', '/login', '/register', '/dashboard', '/logout', '/laporan', '/laporan-saya', '/edit-laporan', '/hapus-laporan', '/admin-users', '/admin-laporan', '/rt-darurat', '/rt-monitoring', '/petugas-tugas', '/petugas-riwayat'], true);
 }
 
 function handleWebAuthPage(): void
@@ -40,6 +40,12 @@ function handleWebAuthPage(): void
                 [$errors, $success] = processEditLaporanForm();
             } elseif ($path === '/hapus-laporan') {
                 processDeleteLaporanForm();
+            } elseif ($path === '/admin-users') {
+                [$errors, $success] = processAdminUserStatusForm();
+            } elseif ($path === '/admin-laporan') {
+                [$errors, $success] = processAdminLaporanForm();
+            } elseif ($path === '/petugas-tugas') {
+                [$errors, $success] = processPetugasTaskForm();
             } elseif ($path === '/logout') {
                 $_SESSION = [];
                 session_destroy();
@@ -78,6 +84,36 @@ function handleWebAuthPage(): void
         return;
     }
 
+    if ($path === '/admin-users') {
+        renderAdminUsersPage($errors, $success);
+        return;
+    }
+
+    if ($path === '/admin-laporan') {
+        renderAdminLaporanPage($errors, $success);
+        return;
+    }
+
+    if ($path === '/rt-darurat') {
+        renderRtDaruratPage();
+        return;
+    }
+
+    if ($path === '/rt-monitoring') {
+        renderRtMonitoringPage();
+        return;
+    }
+
+    if ($path === '/petugas-tugas') {
+        renderPetugasTugasPage($errors, $success);
+        return;
+    }
+
+    if ($path === '/petugas-riwayat') {
+        renderPetugasRiwayatPage();
+        return;
+    }
+
     renderAuthPage($path === '/register' ? 'register' : 'login', $errors, $success);
 }
 
@@ -107,6 +143,12 @@ function normalizeWebAuthPath(string $path): string
         '/laporan-saya.php' => '/laporan-saya',
         '/edit-laporan.php' => '/edit-laporan',
         '/hapus-laporan.php' => '/hapus-laporan',
+        '/admin-users.php' => '/admin-users',
+        '/admin-laporan.php' => '/admin-laporan',
+        '/rt-darurat.php' => '/rt-darurat',
+        '/rt-monitoring.php' => '/rt-monitoring',
+        '/petugas-tugas.php' => '/petugas-tugas',
+        '/petugas-riwayat.php' => '/petugas-riwayat',
     ];
 
     return $aliases[$path] ?? $path;
@@ -515,6 +557,211 @@ function processDeleteLaporanForm(): void
     }
 }
 
+function processAdminUserStatusForm(): array
+{
+    $admin = requireAdminWeb();
+    $userId = (int)($_POST['user_id'] ?? 0);
+    $status = (string)($_POST['status_akun'] ?? '');
+
+    if ($userId < 1 || !in_array($status, ['aktif', 'nonaktif', 'pending'], true)) {
+        return [['Data status user tidak valid.'], ''];
+    }
+
+    if ($userId === (int)$admin['id']) {
+        return [['Tidak bisa mengubah status akun sendiri.'], ''];
+    }
+
+    $db = \App\Db\Database::getInstance();
+    $target = $db->query("SELECT id, role FROM users WHERE id = ? LIMIT 1", [$userId])->fetch();
+    if (!$target) {
+        return [['User tidak ditemukan.'], ''];
+    }
+
+    $db->query("UPDATE users SET status_akun = ?, updated_at = NOW() WHERE id = ?", [$status, $userId]);
+    if ($status !== 'aktif') {
+        $db->query("UPDATE user_sessions SET is_active = 0 WHERE user_id = ?", [$userId]);
+    }
+
+    return [[], 'Status user berhasil diperbarui.'];
+}
+
+function processAdminLaporanForm(): array
+{
+    $admin = requireAdminWeb();
+    $reportId = (int)($_POST['laporan_id'] ?? 0);
+    $action = (string)($_POST['action'] ?? '');
+
+    if ($reportId < 1 || !in_array($action, ['verify', 'reject', 'assign'], true)) {
+        return [['Aksi laporan tidak valid.'], ''];
+    }
+
+    $db = \App\Db\Database::getInstance();
+    $report = $db->query("SELECT id, status FROM laporan_kerusakan WHERE id = ? LIMIT 1", [$reportId])->fetch();
+    if (!$report) {
+        return [['Laporan tidak ditemukan.'], ''];
+    }
+
+    if ($action === 'verify') {
+        adminChangeReportStatus($db, $report, (int)$admin['id'], 'diverifikasi', trim((string)($_POST['catatan_admin'] ?? 'Laporan diverifikasi admin.')));
+        return [[], 'Laporan berhasil diverifikasi.'];
+    }
+
+    if ($action === 'reject') {
+        $reason = trim((string)($_POST['alasan_penolakan'] ?? ''));
+        if ($reason === '') {
+            return [['Alasan penolakan wajib diisi.'], ''];
+        }
+        adminChangeReportStatus($db, $report, (int)$admin['id'], 'ditolak', $reason, ['alasan_penolakan' => $reason]);
+        return [[], 'Laporan berhasil ditolak.'];
+    }
+
+    $petugasId = (int)($_POST['petugas_id'] ?? 0);
+    $petugas = $db->query("SELECT id FROM users WHERE id = ? AND role = 'petugas' AND status_akun = 'aktif' LIMIT 1", [$petugasId])->fetch();
+    if (!$petugas) {
+        return [['Petugas tidak valid atau belum aktif.'], ''];
+    }
+
+    adminChangeReportStatus($db, $report, (int)$admin['id'], 'ditugaskan', trim((string)($_POST['catatan_admin'] ?? 'Laporan ditugaskan ke petugas.')), [
+        'petugas_id' => $petugasId,
+        'tanggal_target_selesai' => nullableInput(trim((string)($_POST['tanggal_target_selesai'] ?? ''))),
+    ]);
+
+    return [[], 'Laporan berhasil ditugaskan ke petugas.'];
+}
+
+function processPetugasTaskForm(): array
+{
+    $petugas = requirePetugasWeb();
+    $taskId = (int)($_POST['laporan_id'] ?? 0);
+    $action = (string)($_POST['action'] ?? '');
+
+    if ($taskId < 1 || !in_array($action, ['mulai', 'progress', 'tindak_lanjut', 'selesai'], true)) {
+        return [['Aksi tugas tidak valid.'], ''];
+    }
+
+    $db = \App\Db\Database::getInstance();
+    $task = $db->query("SELECT * FROM laporan_kerusakan WHERE id = ? AND petugas_id = ? LIMIT 1", [$taskId, (int)$petugas['id']])->fetch();
+    if (!$task) {
+        return [['Tugas tidak ditemukan atau bukan milik akun ini.'], ''];
+    }
+
+    $note = trim((string)($_POST['catatan_petugas'] ?? ''));
+
+    if ($action === 'mulai') {
+        if (!in_array($task['status'], ['diverifikasi', 'ditugaskan', 'perlu_tindak_lanjut'], true)) {
+            return [['Tugas tidak dalam status yang bisa mulai dikerjakan.'], ''];
+        }
+
+        $db->query(
+            "UPDATE laporan_kerusakan SET status = 'dalam_pengerjaan', tanggal_mulai_kerjakan = COALESCE(tanggal_mulai_kerjakan, NOW()), updated_at = NOW() WHERE id = ?",
+            [$taskId]
+        );
+        insertTaskHistory($db, $taskId, (int)$petugas['id'], $task['status'], 'dalam_pengerjaan', 'Petugas mulai mengerjakan laporan.');
+        return [[], 'Tugas berhasil dimulai.'];
+    }
+
+    if ($note === '') {
+        return [['Catatan petugas wajib diisi.'], ''];
+    }
+
+    if ($action === 'progress') {
+        $db->query("UPDATE laporan_kerusakan SET status = 'dalam_pengerjaan', catatan_petugas = ?, updated_at = NOW() WHERE id = ?", [$note, $taskId]);
+        $db->query(
+            "INSERT INTO respons_laporan (laporan_id, direspons_oleh, isi_respons, tipe_respons, is_internal) VALUES (?, ?, ?, 'update_status', 0)",
+            [$taskId, (int)$petugas['id'], $note]
+        );
+        if ($task['status'] !== 'dalam_pengerjaan') {
+            insertTaskHistory($db, $taskId, (int)$petugas['id'], $task['status'], 'dalam_pengerjaan', $note);
+        }
+        savePetugasTaskPhotos($db, $taskId, (int)$petugas['id'], 'proses', $_FILES);
+        return [[], 'Progress tugas berhasil disimpan.'];
+    }
+
+    if ($action === 'tindak_lanjut') {
+        $db->query("UPDATE laporan_kerusakan SET status = 'perlu_tindak_lanjut', catatan_petugas = ?, updated_at = NOW() WHERE id = ?", [$note, $taskId]);
+        insertTaskHistory($db, $taskId, (int)$petugas['id'], $task['status'], 'perlu_tindak_lanjut', $note);
+        return [[], 'Tugas ditandai perlu tindak lanjut.'];
+    }
+
+    $db->query("UPDATE laporan_kerusakan SET status = 'selesai', catatan_petugas = ?, tanggal_selesai = NOW(), updated_at = NOW() WHERE id = ?", [$note, $taskId]);
+    $db->query("INSERT INTO respons_laporan (laporan_id, direspons_oleh, isi_respons, tipe_respons) VALUES (?, ?, ?, 'penyelesaian')", [$taskId, (int)$petugas['id'], $note]);
+    insertTaskHistory($db, $taskId, (int)$petugas['id'], $task['status'], 'selesai', $note);
+    savePetugasTaskPhotos($db, $taskId, (int)$petugas['id'], 'bukti_selesai', $_FILES);
+
+    return [[], 'Tugas berhasil ditandai selesai.'];
+}
+
+function insertTaskHistory(\App\Db\Database $db, int $taskId, int $userId, string $oldStatus, string $newStatus, string $note): void
+{
+    $db->query(
+        "INSERT INTO histori_laporan (laporan_id, diubah_oleh, status_lama, status_baru, keterangan) VALUES (?, ?, ?, ?, ?)",
+        [$taskId, $userId, $oldStatus, $newStatus, $note]
+    );
+}
+
+function savePetugasTaskPhotos(\App\Db\Database $db, int $taskId, int $userId, string $type, array $files): void
+{
+    if (empty($files['fotos']['name'])) {
+        return;
+    }
+
+    $names = is_array($files['fotos']['name']) ? $files['fotos']['name'] : [$files['fotos']['name']];
+    $upload = new \App\Utils\FileUpload();
+
+    foreach ($names as $index => $name) {
+        if ($name === '') {
+            continue;
+        }
+
+        $file = is_array($files['fotos']['name'])
+            ? [
+                'name' => $name,
+                'type' => $files['fotos']['type'][$index] ?? '',
+                'tmp_name' => $files['fotos']['tmp_name'][$index] ?? '',
+                'error' => $files['fotos']['error'][$index] ?? UPLOAD_ERR_NO_FILE,
+                'size' => $files['fotos']['size'][$index] ?? 0,
+            ]
+            : $files['fotos'];
+
+        if (($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
+            continue;
+        }
+
+        $saved = $upload->fotoLaporan($file, 'laporan');
+        $db->query(
+            "INSERT INTO foto_laporan (laporan_id, nama_file, path_file, ukuran_file, tipe_mime, tipe_foto, diunggah_oleh)
+             VALUES (?, ?, ?, ?, ?, ?, ?)",
+            [$taskId, $saved['nama_file'], $saved['path_file'], $saved['ukuran_file'], $saved['tipe_mime'], $type, $userId]
+        );
+    }
+}
+
+function adminChangeReportStatus(\App\Db\Database $db, array $report, int $adminId, string $newStatus, string $note, array $extra = []): void
+{
+    $sets = ['status = ?', 'updated_at = NOW()'];
+    $params = [$newStatus];
+
+    if (in_array($newStatus, ['diverifikasi', 'ditolak', 'ditugaskan'], true)) {
+        $sets[] = 'diverifikasi_oleh = ?';
+        $params[] = $adminId;
+    }
+
+    foreach ($extra as $field => $value) {
+        if (in_array($field, ['petugas_id', 'tanggal_target_selesai', 'alasan_penolakan'], true)) {
+            $sets[] = "{$field} = ?";
+            $params[] = $value;
+        }
+    }
+
+    $params[] = (int)$report['id'];
+    $db->query("UPDATE laporan_kerusakan SET " . implode(', ', $sets) . " WHERE id = ?", $params);
+    $db->query(
+        "INSERT INTO histori_laporan (laporan_id, diubah_oleh, status_lama, status_baru, keterangan)
+         VALUES (?, ?, ?, ?, ?)",
+        [(int)$report['id'], $adminId, $report['status'], $newStatus, $note !== '' ? $note : $newStatus]
+    );
+}
+
 function validateLaporanInput(array $input): array
 {
     $errors = [];
@@ -732,6 +979,114 @@ function renderEditLaporanPage(array $errors = [], string $success = ''): void
     require __DIR__ . '/laporan_edit.php';
 }
 
+function renderAdminUsersPage(array $errors = [], string $success = ''): void
+{
+    $admin = requireAdminWeb();
+
+    header('Content-Type: text/html; charset=UTF-8');
+    $users = getAdminUsers();
+    $csrf = e(csrfToken());
+
+    require __DIR__ . '/admin_users.php';
+}
+
+function renderAdminLaporanPage(array $errors = [], string $success = ''): void
+{
+    $admin = requireAdminWeb();
+
+    header('Content-Type: text/html; charset=UTF-8');
+    $reports = getAdminReports();
+    $petugas = getActivePetugas();
+    $csrf = e(csrfToken());
+
+    require __DIR__ . '/admin_laporan.php';
+}
+
+function renderRtDaruratPage(): void
+{
+    $rt = requireRtWeb();
+
+    header('Content-Type: text/html; charset=UTF-8');
+    $reports = getRtEmergencyReports();
+    $summary = getRtEmergencySummary();
+
+    require __DIR__ . '/rt_darurat.php';
+}
+
+function renderRtMonitoringPage(): void
+{
+    $rt = requireRtWeb();
+
+    header('Content-Type: text/html; charset=UTF-8');
+    $officers = getRtOfficerMonitoring();
+    $activeTasks = getRtActiveTasks();
+
+    require __DIR__ . '/rt_monitoring.php';
+}
+
+function renderPetugasTugasPage(array $errors = [], string $success = ''): void
+{
+    $petugas = requirePetugasWeb();
+
+    header('Content-Type: text/html; charset=UTF-8');
+    $tasks = getPetugasActiveTasks((int)$petugas['id']);
+    $csrf = e(csrfToken());
+
+    require __DIR__ . '/petugas_tugas.php';
+}
+
+function renderPetugasRiwayatPage(): void
+{
+    $petugas = requirePetugasWeb();
+
+    header('Content-Type: text/html; charset=UTF-8');
+    $tasks = getPetugasHistoryTasks((int)$petugas['id']);
+
+    require __DIR__ . '/petugas_riwayat.php';
+}
+
+function requireAdminWeb(): array
+{
+    if (empty($_SESSION['auth_user'])) {
+        redirectTo('/login');
+    }
+
+    $user = $_SESSION['auth_user'];
+    if (($user['role'] ?? '') !== 'admin') {
+        redirectTo('/dashboard');
+    }
+
+    return $user;
+}
+
+function requireRtWeb(): array
+{
+    if (empty($_SESSION['auth_user'])) {
+        redirectTo('/login');
+    }
+
+    $user = $_SESSION['auth_user'];
+    if (($user['role'] ?? '') !== 'rt') {
+        redirectTo('/dashboard');
+    }
+
+    return $user;
+}
+
+function requirePetugasWeb(): array
+{
+    if (empty($_SESSION['auth_user'])) {
+        redirectTo('/login');
+    }
+
+    $user = $_SESSION['auth_user'];
+    if (($user['role'] ?? '') !== 'petugas') {
+        redirectTo('/dashboard');
+    }
+
+    return $user;
+}
+
 function getActiveCategories(): array
 {
     try {
@@ -790,6 +1145,149 @@ function getOwnedReport(int $reportId, int $userId): ?array
         return $report ?: null;
     } catch (Throwable) {
         return null;
+    }
+}
+
+function getAdminUsers(): array
+{
+    try {
+        return \App\Db\Database::getInstance()
+            ->query(
+                "SELECT u.id, u.kode_user, u.nik, u.nama_lengkap, u.email, u.no_hp, u.role, u.status_akun, u.created_at,
+                        pw.no_rt, pw.no_rw, pw.alamat_lengkap
+                 FROM users u
+                 LEFT JOIN profil_warga pw ON pw.user_id = u.id
+                 ORDER BY FIELD(u.status_akun, 'pending', 'aktif', 'nonaktif'), u.created_at DESC"
+            )
+            ->fetchAll() ?: [];
+    } catch (Throwable) {
+        return [];
+    }
+}
+
+function getAdminReports(): array
+{
+    try {
+        return \App\Db\Database::getInstance()
+            ->query(
+                "SELECT id, kode_laporan, judul, nama_pelapor, hp_pelapor, nama_kategori, label_status, status,
+                        tingkat_prioritas, lokasi_detail, nama_petugas, created_at, alasan_penolakan
+                 FROM v_laporan_ringkasan
+                 ORDER BY FIELD(status, 'menunggu_verifikasi', 'diverifikasi', 'ditugaskan', 'dalam_pengerjaan', 'perlu_tindak_lanjut', 'selesai', 'ditolak', 'dibatalkan'), created_at DESC
+                 LIMIT 100"
+            )
+            ->fetchAll() ?: [];
+    } catch (Throwable) {
+        return [];
+    }
+}
+
+function getActivePetugas(): array
+{
+    try {
+        return \App\Db\Database::getInstance()
+            ->query("SELECT id, kode_user, nama_lengkap FROM users WHERE role = 'petugas' AND status_akun = 'aktif' ORDER BY nama_lengkap")
+            ->fetchAll() ?: [];
+    } catch (Throwable) {
+        return [];
+    }
+}
+
+function getRtEmergencyReports(): array
+{
+    try {
+        return \App\Db\Database::getInstance()
+            ->query(
+                "SELECT id, kode_laporan, judul, nama_pelapor, hp_pelapor, nama_kategori, label_status, status,
+                        tingkat_prioritas, lokasi_detail, latitude, longitude, akurasi_gps_meter, nama_petugas, created_at
+                 FROM v_laporan_ringkasan
+                 WHERE tingkat_prioritas = 'darurat' AND status NOT IN ('selesai','ditolak','dibatalkan')
+                 ORDER BY created_at ASC"
+            )
+            ->fetchAll() ?: [];
+    } catch (Throwable) {
+        return [];
+    }
+}
+
+function getRtEmergencySummary(): array
+{
+    try {
+        $db = \App\Db\Database::getInstance();
+        return [
+            'total' => dashboardCount($db, "SELECT COUNT(*) FROM laporan_kerusakan WHERE tingkat_prioritas = 'darurat' AND status NOT IN ('selesai','ditolak','dibatalkan')"),
+            'menunggu' => dashboardCount($db, "SELECT COUNT(*) FROM laporan_kerusakan WHERE tingkat_prioritas = 'darurat' AND status = 'menunggu_verifikasi'"),
+            'diproses' => dashboardCount($db, "SELECT COUNT(*) FROM laporan_kerusakan WHERE tingkat_prioritas = 'darurat' AND status IN ('diverifikasi','ditugaskan','dalam_pengerjaan','perlu_tindak_lanjut')"),
+        ];
+    } catch (Throwable) {
+        return ['total' => 0, 'menunggu' => 0, 'diproses' => 0];
+    }
+}
+
+function getRtOfficerMonitoring(): array
+{
+    try {
+        return \App\Db\Database::getInstance()
+            ->query("SELECT * FROM v_monitoring_petugas ORDER BY jml_aktif DESC, nama_petugas")
+            ->fetchAll() ?: [];
+    } catch (Throwable) {
+        return [];
+    }
+}
+
+function getRtActiveTasks(): array
+{
+    try {
+        return \App\Db\Database::getInstance()
+            ->query(
+                "SELECT kode_laporan, judul, label_status, tingkat_prioritas, lokasi_detail, nama_petugas, created_at
+                 FROM v_laporan_ringkasan
+                 WHERE status IN ('ditugaskan','dalam_pengerjaan','perlu_tindak_lanjut')
+                 ORDER BY tingkat_prioritas DESC, created_at ASC
+                 LIMIT 30"
+            )
+            ->fetchAll() ?: [];
+    } catch (Throwable) {
+        return [];
+    }
+}
+
+function getPetugasActiveTasks(int $petugasId): array
+{
+    try {
+        return \App\Db\Database::getInstance()
+            ->query(
+                "SELECT id, kode_laporan, judul, nama_pelapor, hp_pelapor, nama_kategori, label_status, status,
+                        tingkat_prioritas, lokasi_detail, latitude, longitude, created_at, tanggal_target_selesai, catatan_petugas
+                 FROM v_laporan_ringkasan
+                 WHERE kode_petugas = (SELECT kode_user FROM users WHERE id = ?)
+                   AND status IN ('diverifikasi','ditugaskan','dalam_pengerjaan','perlu_tindak_lanjut')
+                 ORDER BY tingkat_prioritas DESC, created_at ASC",
+                [$petugasId]
+            )
+            ->fetchAll() ?: [];
+    } catch (Throwable) {
+        return [];
+    }
+}
+
+function getPetugasHistoryTasks(int $petugasId): array
+{
+    try {
+        return \App\Db\Database::getInstance()
+            ->query(
+                "SELECT id, kode_laporan, judul, nama_pelapor, nama_kategori, label_status, status,
+                        tingkat_prioritas, lokasi_detail, created_at, tanggal_mulai_kerjakan, tanggal_selesai, durasi_hari, rating_warga
+                 FROM v_laporan_ringkasan
+                 WHERE kode_petugas = (SELECT kode_user FROM users WHERE id = ?)
+                   AND status IN ('selesai','ditolak','dibatalkan')
+                 ORDER BY COALESCE(tanggal_selesai, created_at) DESC
+                 LIMIT 100",
+                [$petugasId]
+            )
+            ->fetchAll() ?: [];
+    } catch (Throwable) {
+        return [];
     }
 }
 
@@ -860,11 +1358,11 @@ function buildPetugasDashboard(\App\Db\Database $db, int $userId): array
     return [
         'stats' => [
             ['label' => 'Total Tugas', 'value' => dashboardCount($db, "SELECT COUNT(*) FROM laporan_kerusakan WHERE petugas_id = ?", [$userId]), 'tone' => 'primary'],
-            ['label' => 'Ditugaskan', 'value' => dashboardCount($db, "SELECT COUNT(*) FROM laporan_kerusakan WHERE petugas_id = ? AND status = 'ditugaskan'", [$userId]), 'tone' => 'warning'],
+            ['label' => 'Ditugaskan', 'value' => dashboardCount($db, "SELECT COUNT(*) FROM laporan_kerusakan WHERE petugas_id = ? AND status IN ('diverifikasi','ditugaskan')", [$userId]), 'tone' => 'warning'],
             ['label' => 'Dikerjakan', 'value' => dashboardCount($db, "SELECT COUNT(*) FROM laporan_kerusakan WHERE petugas_id = ? AND status IN ('dalam_pengerjaan','perlu_tindak_lanjut')", [$userId]), 'tone' => 'info'],
             ['label' => 'Selesai', 'value' => dashboardCount($db, "SELECT COUNT(*) FROM laporan_kerusakan WHERE petugas_id = ? AND status = 'selesai'", [$userId]), 'tone' => 'success'],
         ],
-        'rows' => dashboardRows($db, "SELECT kode_laporan, judul, nama_pelapor, label_status, tingkat_prioritas, lokasi_detail, created_at FROM v_laporan_ringkasan WHERE kode_petugas = (SELECT kode_user FROM users WHERE id = ?) AND status IN ('ditugaskan','dalam_pengerjaan','perlu_tindak_lanjut') ORDER BY tingkat_prioritas DESC, created_at ASC LIMIT 8", [$userId]),
+        'rows' => dashboardRows($db, "SELECT kode_laporan, judul, nama_pelapor, label_status, tingkat_prioritas, lokasi_detail, created_at FROM v_laporan_ringkasan WHERE kode_petugas = (SELECT kode_user FROM users WHERE id = ?) AND status IN ('diverifikasi','ditugaskan','dalam_pengerjaan','perlu_tindak_lanjut') ORDER BY tingkat_prioritas DESC, created_at ASC LIMIT 8", [$userId]),
         'secondary_rows' => dashboardRows($db, "SELECT kode_laporan, judul, label_status, tanggal_selesai FROM v_laporan_ringkasan WHERE kode_petugas = (SELECT kode_user FROM users WHERE id = ?) AND status = 'selesai' ORDER BY tanggal_selesai DESC LIMIT 5", [$userId]),
         'primary_title' => 'Tugas Aktif',
         'secondary_title' => 'Tugas Selesai Terbaru',
@@ -914,6 +1412,12 @@ function urlFor(string $path): string
         '/laporan-saya' => '/laporan-saya.php',
         '/edit-laporan' => '/edit-laporan.php',
         '/hapus-laporan' => '/hapus-laporan.php',
+        '/admin-users' => '/admin-users.php',
+        '/admin-laporan' => '/admin-laporan.php',
+        '/rt-darurat' => '/rt-darurat.php',
+        '/rt-monitoring' => '/rt-monitoring.php',
+        '/petugas-tugas' => '/petugas-tugas.php',
+        '/petugas-riwayat' => '/petugas-riwayat.php',
     ];
 
     $path = $pageAliases[$path] ?? $path;

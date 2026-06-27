@@ -77,14 +77,14 @@ $secondaryRows = $dashboard['secondary_rows'] ?? [];
                 <a class="nav-link" href="<?= e(urlFor('/laporan')) ?>"><i class="bi bi-file-earmark-plus me-2"></i>Buat Laporan</a>
                 <a class="nav-link" href="<?= e(urlFor('/laporan-saya')) ?>"><i class="bi bi-list-check me-2"></i>Laporan Saya</a>
             <?php elseif ($role === 'admin'): ?>
-                <a class="nav-link" href="#"><i class="bi bi-people me-2"></i>Kelola User</a>
-                <a class="nav-link" href="#"><i class="bi bi-clipboard-check me-2"></i>Verifikasi Laporan</a>
+                <a class="nav-link" href="<?= e(urlFor('/admin-users')) ?>"><i class="bi bi-people me-2"></i>Kelola User</a>
+                <a class="nav-link" href="<?= e(urlFor('/admin-laporan')) ?>"><i class="bi bi-clipboard-check me-2"></i>Verifikasi Laporan</a>
             <?php elseif ($role === 'petugas'): ?>
-                <a class="nav-link" href="#"><i class="bi bi-tools me-2"></i>Tugas Aktif</a>
-                <a class="nav-link" href="#"><i class="bi bi-clock-history me-2"></i>Riwayat Tugas</a>
+                <a class="nav-link" href="<?= e(urlFor('/petugas-tugas')) ?>"><i class="bi bi-tools me-2"></i>Tugas Aktif</a>
+                <a class="nav-link" href="<?= e(urlFor('/petugas-riwayat')) ?>"><i class="bi bi-clock-history me-2"></i>Riwayat Tugas</a>
             <?php elseif ($role === 'rt'): ?>
-                <a class="nav-link" href="#"><i class="bi bi-exclamation-triangle me-2"></i>Laporan Darurat</a>
-                <a class="nav-link" href="#"><i class="bi bi-person-workspace me-2"></i>Monitoring Petugas</a>
+                <a class="nav-link" href="<?= e(urlFor('/rt-darurat')) ?>"><i class="bi bi-exclamation-triangle me-2"></i>Laporan Darurat</a>
+                <a class="nav-link" href="<?= e(urlFor('/rt-monitoring')) ?>"><i class="bi bi-person-workspace me-2"></i>Monitoring Petugas</a>
             <?php endif; ?>
         </nav>
     </aside>
