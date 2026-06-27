@@ -1,0 +1,21 @@
+CREATE TABLE IF NOT EXISTS `lokasi_realtime` (
+  `id` int UNSIGNED NOT NULL AUTO_INCREMENT,
+  `user_id` int UNSIGNED NOT NULL,
+  `latitude` decimal(10,8) NOT NULL,
+  `longitude` decimal(11,8) NOT NULL,
+  `akurasi_gps_meter` float DEFAULT NULL,
+  `kecepatan_meter_per_detik` float DEFAULT NULL,
+  `arah_derajat` float DEFAULT NULL,
+  `sumber` enum('device','manual','laporan','petugas') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'device',
+  `maps_url` varchar(500) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `ip_address` varchar(45) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `user_agent` text COLLATE utf8mb4_unicode_ci,
+  `recorded_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `user_id` (`user_id`),
+  KEY `idx_recorded_at` (`recorded_at`),
+  KEY `idx_koordinat` (`latitude`, `longitude`),
+  CONSTRAINT `lokasi_realtime_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
