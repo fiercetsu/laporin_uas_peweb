@@ -55,7 +55,6 @@ function getAdminUsers(): array
                         w.alamat_lengkap, w.no_rt, w.no_rw
                  FROM users u
                  LEFT JOIN profil_warga w ON w.user_id = u.id
-                 WHERE u.role != 'admin'
                  ORDER BY FIELD(u.status_akun, 'pending', 'aktif', 'nonaktif'), u.created_at DESC"
             )
             ->fetchAll() ?: [];

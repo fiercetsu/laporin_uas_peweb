@@ -131,6 +131,7 @@ function renderAdminUsersPage(array $errors = [], string $success = ''): void
     header('Content-Type: text/html; charset=UTF-8');
     $users = getAdminUsers();
     $csrf = e(csrfToken());
+    $openCreateModal = ($_POST['action'] ?? '') === 'create_user' && $errors !== [];
 
     require __DIR__ . '/../admin/admin_users.php';
 }

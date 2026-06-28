@@ -6,8 +6,6 @@
     return;
   }
 
-
-
   var password = document.getElementById("password");
   var toggle = document.getElementById("togglePassword");
   if (password && toggle) {

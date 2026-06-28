@@ -113,7 +113,7 @@ function handleWebAuthPage(): void
             } elseif ($path === '/hapus-laporan') {
                 processDeleteLaporanForm();
             } elseif ($path === '/admin-users') {
-                [$errors, $success] = processAdminUserStatusForm();
+                [$errors, $success] = processAdminUserForm();
             } elseif ($path === '/admin-laporan') {
                 [$errors, $success] = processAdminLaporanForm();
             } elseif ($path === '/rt-monitoring') {
