@@ -65,10 +65,6 @@ spl_autoload_register(static function (string $class) use ($backendPath): void {
         'App\\Services\\Rt\\LaporanService' => $backendPath . '/services/rt/laporan.php',
         'App\\Services\\Rt\\PetugasService' => $backendPath . '/services/rt/petugas.php',
         'App\\Services\\Rt\\PengumumanService' => $backendPath . '/services/rt/pengumuman.php',
-        'App\\Controllers\\Users\\UsersController' => $backendPath . '/controller/users/usersController.php',
-        'App\\Controllers\\Admin\\AdminController' => $backendPath . '/controller/admin/adminController.php',
-        'App\\Controllers\\Petugas\\PetugasController' => $backendPath . '/controller/petugas/petugasController.php',
-        'App\\Controllers\\Rt\\RtController' => $backendPath . '/controller/rt/rtController.php',
     ];
 
     if (isset($map[$class]) && is_file($map[$class])) {
