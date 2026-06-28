@@ -60,6 +60,18 @@ declare(strict_types=1);
                         <td class="px-4 py-3">
                             <div class="font-semibold"><?= e((string)$task['judul']) ?></div>
                             <div class="text-xs text-[#5d6673]"><?= e((string)$task['nama_kategori']) ?> | <?= e((string)$task['tingkat_prioritas']) ?></div>
+                            <?php
+                            $photos = getReportsPhotos([(int)$task['id']]);
+                            if ($photos !== []):
+                            ?>
+                                <div class="mt-2 flex flex-wrap gap-1">
+                                    <?php foreach ($photos as $photo): ?>
+                                        <a href="<?= e(urlFor($photo['path_file'])) ?>" target="_blank" class="inline-block border border-[#c8ced8] rounded overflow-hidden p-0.5 hover:border-[#00409c] transition-all bg-white">
+                                            <img src="<?= e(urlFor($photo['path_file'])) ?>" alt="Foto Bukti" class="h-8 w-8 object-cover rounded-sm">
+                                        </a>
+                                    <?php endforeach; ?>
+                                </div>
+                            <?php endif; ?>
                         </td>
                         <td class="px-4 py-3"><?= e((string)$task['nama_pelapor']) ?></td>
                         <td class="px-4 py-3"><?= e((string)$task['lokasi_detail']) ?></td>

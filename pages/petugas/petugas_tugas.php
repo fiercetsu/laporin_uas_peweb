@@ -63,6 +63,22 @@ declare(strict_types=1);
                                 Buka lokasi di Maps
                             </a>
                         <?php endif; ?>
+
+                        <?php
+                        $photos = getReportsPhotos([(int)$task['id']]);
+                        if ($photos !== []):
+                        ?>
+                            <div class="mt-4">
+                                <span class="block text-xs font-semibold uppercase tracking-wider text-[#5d6673] mb-2">Foto Bukti Aduan:</span>
+                                <div class="flex flex-wrap gap-2">
+                                    <?php foreach ($photos as $photo): ?>
+                                        <a href="<?= e(urlFor($photo['path_file'])) ?>" target="_blank" class="group relative inline-block border border-[#c8ced8] rounded-lg overflow-hidden hover:border-[#00409c] transition-all bg-white p-1">
+                                            <img src="<?= e(urlFor($photo['path_file'])) ?>" alt="Foto Bukti" class="h-16 w-16 sm:h-20 sm:w-20 object-cover rounded-md group-hover:scale-105 transition-transform duration-200">
+                                        </a>
+                                    <?php endforeach; ?>
+                                </div>
+                            </div>
+                        <?php endif; ?>
                     </div>
                     <form class="rounded-lg border border-[#d7dce2] bg-[#f7f9fc] p-3" method="post" action="<?= e(urlFor('/petugas-tugas')) ?>" enctype="multipart/form-data">
                         <input type="hidden" name="csrf_token" value="<?= $csrf ?>">

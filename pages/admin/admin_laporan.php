@@ -64,6 +64,22 @@ declare(strict_types=1);
                             <div><span class="font-semibold">Lokasi:</span> <?= e((string)$row['lokasi_detail']) ?></div>
                             <div><span class="font-semibold">Petugas:</span> <?= e((string)($row['nama_petugas'] ?? '-')) ?></div>
                         </div>
+
+                        <?php
+                        $photos = getReportsPhotos([(int)$row['id']]);
+                        if ($photos !== []):
+                        ?>
+                            <div class="mt-4">
+                                <span class="block text-xs font-semibold uppercase tracking-wider text-[#5d6673] mb-2">Foto Bukti Aduan:</span>
+                                <div class="flex flex-wrap gap-2">
+                                    <?php foreach ($photos as $photo): ?>
+                                        <a href="<?= e(urlFor($photo['path_file'])) ?>" target="_blank" class="group relative inline-block border border-[#c8ced8] rounded-lg overflow-hidden hover:border-[#00409c] transition-all bg-white p-1">
+                                            <img src="<?= e(urlFor($photo['path_file'])) ?>" alt="Foto Bukti" class="h-16 w-16 sm:h-20 sm:w-20 object-cover rounded-md group-hover:scale-105 transition-transform duration-200">
+                                        </a>
+                                    <?php endforeach; ?>
+                                </div>
+                            </div>
+                        <?php endif; ?>
                     </div>
 
                     <div class="space-y-3">

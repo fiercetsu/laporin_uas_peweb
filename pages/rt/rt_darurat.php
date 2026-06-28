@@ -94,6 +94,18 @@ $toneMap = [
                                 <div class="font-semibold"><?= e((string)$row['judul']) ?></div>
                                 <div class="text-xs text-[#424654]"><?= e((string)$row['nama_pelapor']) ?><?= !empty($row['hp_pelapor']) ? ' | ' . e((string)$row['hp_pelapor']) : '' ?></div>
                                 <div class="text-xs text-[#424654]"><?= e((string)$row['nama_kategori']) ?></div>
+                                <?php
+                                $photos = getReportsPhotos([(int)$row['id']]);
+                                if ($photos !== []):
+                                ?>
+                                    <div class="mt-2 flex flex-wrap gap-1">
+                                        <?php foreach ($photos as $photo): ?>
+                                            <a href="<?= e(urlFor($photo['path_file'])) ?>" target="_blank" class="inline-block border border-[#c8ced8] rounded overflow-hidden p-0.5 hover:border-[#00409c] transition-all bg-white">
+                                                <img src="<?= e(urlFor($photo['path_file'])) ?>" alt="Foto Bukti" class="h-8 w-8 object-cover rounded-sm">
+                                            </a>
+                                        <?php endforeach; ?>
+                                    </div>
+                                <?php endif; ?>
                             </td>
                             <td class="px-4 py-4"><span class="px-2 py-1 rounded text-xs font-semibold bg-rose-100 text-rose-800"><?= e((string)$row['label_status']) ?></span></td>
                             <td class="px-4 py-4"><?= e((string)($row['nama_petugas'] ?? '-')) ?></td>
