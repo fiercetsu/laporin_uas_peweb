@@ -39,21 +39,22 @@ function processLoginForm(): array
 
         unset($user['password_hash']);
         $_SESSION['auth_user'] = $user;
+        session_regenerate_id(true);
 
-        // Prevent multiple logins: set previous sessions for this user to inactive
-        $db->query("UPDATE user_sessions SET is_active = 0 WHERE user_id = ?", [$user['id']]);
+        // Hapus session lama agar hanya session login terbaru yang tersimpan.
+        $db->query("DELETE FROM user_sessions WHERE user_id = ?", [$user['id']]);
 
         // Register the new web session ID
         $sessionId = session_id();
         $db->query(
             "INSERT INTO user_sessions (user_id, session_token, ip_address, user_agent, expired_at, is_active)
-             VALUES (?, ?, ?, ?, ?, 1)",
+             VALUES (?, ?, ?, ?, DATE_ADD(NOW(), INTERVAL ? MINUTE), 1)",
             [
                 $user['id'],
                 $sessionId,
                 $_SERVER['REMOTE_ADDR'] ?? null,
                 substr($_SERVER['HTTP_USER_AGENT'] ?? '', 0, 500),
-                date('Y-m-d H:i:s', strtotime('+1 day')),
+                webSessionIdleMinutes(),
             ]
         );
 

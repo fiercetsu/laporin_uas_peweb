@@ -49,6 +49,13 @@ function renderDashboardPage(): void
     header('Content-Type: text/html; charset=UTF-8');
     $user = $_SESSION['auth_user'];
     $dashboard = buildDashboardData($user);
+    $categories = [];
+    $reportAction = urlFor('/laporan');
+    $reportCsrf = e(csrfToken());
+
+    if (($user['role'] ?? '') === 'warga') {
+        $categories = getActiveCategories();
+    }
 
     require __DIR__ . '/../dashboard.php';
 }
@@ -85,6 +92,9 @@ function renderLaporanSayaPage(): void
     header('Content-Type: text/html; charset=UTF-8');
     $user = $_SESSION['auth_user'];
     $reports = getMyReports((int)$user['id']);
+    $categories = getActiveCategories();
+    $action = urlFor('/laporan');
+    $csrf = e(csrfToken());
 
     require __DIR__ . '/../users/laporan_saya.php';
 }
@@ -199,4 +209,42 @@ function renderPetugasRiwayatPage(): void
     $tasks = getPetugasHistoryTasks((int)$petugas['id']);
 
     require __DIR__ . '/../petugas/petugas_riwayat.php';
+}
+
+function renderProfilePage(array $errors = [], string $success = ''): void
+{
+    if (empty($_SESSION['auth_user'])) {
+        redirectTo('/login');
+    }
+
+    header('Content-Type: text/html; charset=UTF-8');
+    $user = $_SESSION['auth_user'];
+    $profile = getProfileData((int)$user['id']);
+    $csrf = e(csrfToken());
+
+    require __DIR__ . '/../profile.php';
+}
+
+function renderLaporanPdfPage(): void
+{
+    if (empty($_SESSION['auth_user'])) {
+        redirectTo('/login');
+    }
+
+    $user = $_SESSION['auth_user'];
+    if (!in_array((string)($user['role'] ?? ''), ['petugas', 'rt'], true)) {
+        redirectTo('/dashboard');
+    }
+
+    header('Content-Type: text/html; charset=UTF-8');
+    $reports = getCompletedReportsForPdf($user);
+    $photosByReport = [];
+    $ids = array_map(static fn(array $row): int => (int)$row['id'], $reports);
+    if ($ids !== []) {
+        foreach (getReportsPhotos($ids) as $photo) {
+            $photosByReport[(int)$photo['laporan_id']][] = $photo;
+        }
+    }
+
+    require __DIR__ . '/../laporan_pdf.php';
 }

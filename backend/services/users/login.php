@@ -50,13 +50,14 @@ class LoginService
         $access = $this->jwt->generateAccessToken($payload);
         $refresh = $this->jwt->generateRefreshToken((int)$user['id']);
 
+        $this->db->query("DELETE FROM user_sessions WHERE user_id = ?", [$user['id']]);
         $this->db->query(
             "INSERT INTO user_sessions (user_id, session_token, ip_address, user_agent, expired_at)
-             VALUES (?, ?, ?, ?, ?)",
+             VALUES (?, ?, ?, ?, DATE_ADD(NOW(), INTERVAL ? DAY))",
             [
                 $user['id'], hash('sha256', $refresh), $_SERVER['REMOTE_ADDR'] ?? null,
                 substr($_SERVER['HTTP_USER_AGENT'] ?? '', 0, 500),
-                date('Y-m-d H:i:s', strtotime('+' . (int)($_ENV['JWT_REFRESH_EXPIRE_DAYS'] ?? 7) . ' days')),
+                (int)($_ENV['JWT_REFRESH_EXPIRE_DAYS'] ?? 7),
             ]
         );
 

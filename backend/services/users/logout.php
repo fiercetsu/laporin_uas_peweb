@@ -19,7 +19,7 @@ class LogoutService
     {
         $refresh = (string)($input['refresh_token'] ?? '');
         if ($refresh !== '') {
-            $this->db->query("UPDATE user_sessions SET is_active = 0 WHERE session_token = ?", [hash('sha256', $refresh)]);
+            $this->db->query("DELETE FROM user_sessions WHERE session_token = ?", [hash('sha256', $refresh)]);
         }
         Response::success(null, 'Logout berhasil.');
     }

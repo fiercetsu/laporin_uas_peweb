@@ -7,83 +7,80 @@ declare(strict_types=1);
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Tugas Aktif - Petugas</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-    <style>
-        body { background: #eef3f8; }
-        .task-card { border: 0; border-radius: 8px; }
-        .text-small { font-size: .875rem; }
-    </style>
+    <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?display=swap&family=Inter%3Awght%40400%3B500%3B600%3B700%3B800">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined">
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 </head>
-<body>
-<main class="container-fluid py-4 px-3 px-lg-4">
-    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 mb-4">
+<body class="bg-[#f7f9fc] font-['Inter',sans-serif] text-[#181c20]">
+<?php renderAppSidebar($petugas, 'petugas-tugas'); ?>
+<main class="min-h-screen px-4 py-6 sm:px-6 lg:ml-[280px] lg:px-8">
+    <header class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-            <a class="text-decoration-none text-secondary text-small" href="<?= e(urlFor('/dashboard')) ?>">
-                <i class="bi bi-arrow-left"></i> Kembali ke dashboard
+            <a class="inline-flex items-center gap-1 text-sm font-semibold text-[#00409c]" href="<?= e(urlFor('/dashboard')) ?>">
+                <span class="material-symbols-outlined text-base">arrow_back</span>
+                Kembali ke dashboard
             </a>
-            <h1 class="h3 mb-1 mt-2">Tugas Aktif</h1>
-            <p class="text-secondary mb-0">Mulai pekerjaan, kirim progress, tandai tindak lanjut, atau selesaikan tugas.</p>
+            <h1 class="mt-2 text-2xl font-bold">Tugas Aktif</h1>
+            <p class="text-sm text-[#5d6673]">Mulai pekerjaan, kirim progress, tandai tindak lanjut, atau selesaikan tugas.</p>
         </div>
-        <a class="btn btn-outline-primary" href="<?= e(urlFor('/petugas-riwayat')) ?>">
-            <i class="bi bi-clock-history me-1"></i>Riwayat Tugas
+        <a class="inline-flex items-center justify-center gap-2 rounded-lg border border-[#c8ced8] bg-white px-4 py-2 font-semibold text-[#00409c] hover:bg-[#eef5ff]" href="<?= e(urlFor('/petugas-riwayat')) ?>">
+            <span class="material-symbols-outlined text-lg">history</span>
+            Riwayat Tugas
         </a>
-    </div>
+    </header>
 
     <?php if ($errors !== []): ?>
-        <div class="alert alert-danger"><?php foreach ($errors as $error): ?><div><?= e($error) ?></div><?php endforeach; ?></div>
+        <div class="mb-4 rounded-lg border border-[#f2b8b5] bg-[#ffdad6] p-4 text-[#93000a]"><?php foreach ($errors as $error): ?><div><?= e($error) ?></div><?php endforeach; ?></div>
     <?php endif; ?>
     <?php if ($success !== ''): ?>
-        <div class="alert alert-success"><?= e($success) ?></div>
+        <div class="mb-4 rounded-lg border border-[#b8e6c9] bg-[#dcfce7] p-4 text-[#166534]"><?= e($success) ?></div>
     <?php endif; ?>
 
-    <div class="row g-3">
+    <div class="grid gap-4">
         <?php if ($tasks === []): ?>
-            <div class="col-12"><div class="card task-card shadow-sm"><div class="card-body text-center text-secondary py-5">Belum ada tugas aktif.</div></div></div>
+            <div class="rounded-lg border border-[#d7dce2] bg-white py-12 text-center text-[#5d6673]">Belum ada tugas aktif.</div>
         <?php endif; ?>
         <?php foreach ($tasks as $task): ?>
-            <div class="col-12">
-                <section class="card task-card shadow-sm">
-                    <div class="card-body p-3 p-lg-4">
-                        <div class="d-flex flex-column flex-xl-row justify-content-between gap-3">
-                            <div class="flex-grow-1">
-                                <div class="d-flex flex-wrap gap-2 mb-2">
-                                    <span class="badge text-bg-light"><?= e((string)$task['kode_laporan']) ?></span>
-                                    <span class="badge text-bg-info"><?= e((string)$task['label_status']) ?></span>
-                                    <span class="badge text-bg-secondary"><?= e((string)$task['tingkat_prioritas']) ?></span>
-                                </div>
-                                <h2 class="h5 mb-1"><?= e((string)$task['judul']) ?></h2>
-                                <div class="text-secondary text-small mb-2">Pelapor: <?= e((string)$task['nama_pelapor']) ?><?= !empty($task['hp_pelapor']) ? ' | HP: ' . e((string)$task['hp_pelapor']) : '' ?></div>
-                                <div class="row g-2 text-small">
-                                    <div class="col-md-4"><strong>Kategori:</strong> <?= e((string)$task['nama_kategori']) ?></div>
-                                    <div class="col-md-4"><strong>Lokasi:</strong> <?= e((string)$task['lokasi_detail']) ?></div>
-                                    <div class="col-md-4"><strong>Target:</strong> <?= e((string)($task['tanggal_target_selesai'] ?? '-')) ?></div>
-                                </div>
-                                <?php if (!empty($task['latitude']) && !empty($task['longitude'])): ?>
-                                    <a class="text-small" target="_blank" rel="noopener" href="https://www.google.com/maps?q=<?= e((string)$task['latitude']) ?>,<?= e((string)$task['longitude']) ?>">Buka lokasi di Maps</a>
-                                <?php endif; ?>
-                            </div>
-                            <div style="min-width: 360px;">
-                                <form method="post" action="<?= e(urlFor('/petugas-tugas')) ?>" enctype="multipart/form-data">
-                                    <input type="hidden" name="csrf_token" value="<?= $csrf ?>">
-                                    <input type="hidden" name="laporan_id" value="<?= e((string)$task['id']) ?>">
-                                    <textarea class="form-control form-control-sm mb-2" name="catatan_petugas" rows="2" placeholder="Catatan progress atau penyelesaian"></textarea>
-                                    <input class="form-control form-control-sm mb-2" name="fotos[]" type="file" accept="image/jpeg,image/png,image/webp" multiple>
-                                    <div class="d-flex flex-wrap gap-2">
-                                        <button class="btn btn-sm btn-outline-primary" name="action" value="mulai" type="submit">Mulai</button>
-                                        <button class="btn btn-sm btn-primary" name="action" value="progress" type="submit">Update Progress</button>
-                                        <button class="btn btn-sm btn-outline-warning" name="action" value="tindak_lanjut" type="submit">Tindak Lanjut</button>
-                                        <button class="btn btn-sm btn-success" name="action" value="selesai" type="submit">Selesai</button>
-                                    </div>
-                                </form>
-                            </div>
+            <section class="rounded-lg border border-[#d7dce2] bg-white p-4 sm:p-6">
+                <div class="grid gap-4 xl:grid-cols-[1fr_380px]">
+                    <div>
+                        <div class="mb-3 flex flex-wrap gap-2">
+                            <span class="rounded bg-[#f0f3f7] px-2 py-1 text-xs font-semibold"><?= e((string)$task['kode_laporan']) ?></span>
+                            <span class="rounded bg-[#dff3ff] px-2 py-1 text-xs font-semibold text-[#00658a]"><?= e((string)$task['label_status']) ?></span>
+                            <span class="rounded bg-[#eef5ff] px-2 py-1 text-xs font-semibold text-[#00409c]"><?= e((string)$task['tingkat_prioritas']) ?></span>
                         </div>
+                        <h2 class="text-lg font-bold"><?= e((string)$task['judul']) ?></h2>
+                        <p class="mb-3 text-sm text-[#5d6673]">Pelapor: <?= e((string)$task['nama_pelapor']) ?><?= !empty($task['hp_pelapor']) ? ' | HP: ' . e((string)$task['hp_pelapor']) : '' ?></p>
+                        <div class="grid gap-2 text-sm md:grid-cols-3">
+                            <div><span class="font-semibold">Kategori:</span> <?= e((string)$task['nama_kategori']) ?></div>
+                            <div><span class="font-semibold">Lokasi:</span> <?= e((string)$task['lokasi_detail']) ?></div>
+                            <div><span class="font-semibold">Target:</span> <?= e((string)($task['tanggal_target_selesai'] ?? '-')) ?></div>
+                        </div>
+                        <?php if (!empty($task['latitude']) && !empty($task['longitude'])): ?>
+                            <a class="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-[#00409c]" target="_blank" rel="noopener" href="https://www.google.com/maps?q=<?= e((string)$task['latitude']) ?>,<?= e((string)$task['longitude']) ?>">
+                                <span class="material-symbols-outlined text-base">location_on</span>
+                                Buka lokasi di Maps
+                            </a>
+                        <?php endif; ?>
                     </div>
-                </section>
-            </div>
+                    <form class="rounded-lg border border-[#d7dce2] bg-[#f7f9fc] p-3" method="post" action="<?= e(urlFor('/petugas-tugas')) ?>" enctype="multipart/form-data">
+                        <input type="hidden" name="csrf_token" value="<?= $csrf ?>">
+                        <input type="hidden" name="laporan_id" value="<?= e((string)$task['id']) ?>">
+                        <textarea class="mb-2 w-full rounded-lg border-[#c8ced8] text-sm" name="catatan_petugas" rows="2" placeholder="Catatan progress atau penyelesaian"></textarea>
+                        <input class="mb-3 w-full rounded-lg border-[#c8ced8] text-sm" name="fotos[]" type="file" accept="image/jpeg,image/png,image/webp" multiple>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button class="rounded-lg border border-[#c8ced8] bg-white px-3 py-2 font-semibold text-[#00409c] hover:bg-[#eef5ff]" name="action" value="mulai" type="submit">Mulai</button>
+                            <button class="rounded-lg bg-[#00409c] px-3 py-2 font-semibold text-white hover:bg-[#0056cc]" name="action" value="progress" type="submit">Update</button>
+                            <button class="rounded-lg border border-[#f3d182] px-3 py-2 font-semibold text-[#7c5800] hover:bg-[#fff4cc]" name="action" value="tindak_lanjut" type="submit">Tindak Lanjut</button>
+                            <button class="rounded-lg bg-[#16803a] px-3 py-2 font-semibold text-white hover:bg-[#126c31]" name="action" value="selesai" type="submit">Selesai</button>
+                        </div>
+                    </form>
+                </div>
+            </section>
         <?php endforeach; ?>
     </div>
 </main>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<?php renderIdleLogoutScript(); ?>
 </body>
 </html>

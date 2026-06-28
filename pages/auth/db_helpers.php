@@ -257,6 +257,172 @@ function getPetugasHistoryTasks(int $petugasId): array
     }
 }
 
+function getProfileData(int $userId): array
+{
+    try {
+        return \App\Db\Database::getInstance()
+            ->query(
+                "SELECT u.id, u.kode_user, u.nik, u.nama_lengkap, u.email, u.no_hp, u.role, u.status_akun,
+                        w.no_kk, w.no_rt, w.no_rw, w.alamat_lengkap, w.kelurahan, w.kecamatan,
+                        w.kota_kabupaten, w.tempat_lahir, w.tanggal_lahir, w.jenis_kelamin,
+                        w.agama, w.status_perkawinan, w.pekerjaan, w.status_tinggal, w.tanggal_pindah_masuk
+                 FROM users u
+                 LEFT JOIN profil_warga w ON w.user_id = u.id
+                 WHERE u.id = ? LIMIT 1",
+                [$userId]
+            )
+            ->fetch() ?: [];
+    } catch (Throwable $e) {
+        return [];
+    }
+}
+
+function getCompletedReportsForPdf(array $user): array
+{
+    $role = (string)($user['role'] ?? '');
+    $userId = (int)($user['id'] ?? 0);
+
+    if (!in_array($role, ['petugas', 'rt'], true)) {
+        return [];
+    }
+
+    try {
+        $db = \App\Db\Database::getInstance();
+        $sql = "SELECT lk.id, lk.kode_laporan, lk.judul, lk.deskripsi,
+                       pelapor.nama_lengkap AS nama_pelapor, pelapor.no_hp AS hp_pelapor,
+                       kl.nama_kategori,
+                       'Selesai' AS label_status, lk.status, lk.tingkat_prioritas, lk.lokasi_detail,
+                       lk.maps_url, lk.latitude, lk.longitude,
+                       petugas.nama_lengkap AS nama_petugas, petugas.no_hp AS hp_petugas,
+                       lk.catatan_petugas, lk.created_at, lk.tanggal_mulai_kerjakan,
+                       lk.tanggal_selesai, (TO_DAYS(COALESCE(lk.tanggal_selesai, NOW())) - TO_DAYS(lk.created_at)) AS durasi_hari,
+                       lk.rating_warga, lk.ulasan_warga
+                FROM laporan_kerusakan lk
+                INNER JOIN users pelapor ON pelapor.id = lk.pelapor_id
+                INNER JOIN kategori_laporan kl ON kl.id = lk.kategori_id
+                LEFT JOIN users petugas ON petugas.id = lk.petugas_id
+                WHERE lk.status = 'selesai'";
+        $params = [];
+
+        if ($role === 'petugas') {
+            $sql .= " AND lk.petugas_id = ?";
+            $params[] = $userId;
+        }
+
+        $sql .= " ORDER BY COALESCE(lk.tanggal_selesai, lk.created_at) DESC LIMIT 100";
+        return $db->query($sql, $params)->fetchAll() ?: [];
+    } catch (Throwable $e) {
+        return [];
+    }
+}
+
+function buildDashboardData(array $user): array
+{
+    try {
+        $db = \App\Db\Database::getInstance();
+        $role = (string)($user['role'] ?? 'warga');
+        $userId = (int)($user['id'] ?? 0);
+
+        if ($role === 'admin') {
+            return buildAdminDashboard($db);
+        }
+
+        if ($role === 'petugas') {
+            return buildPetugasDashboard($db, $userId);
+        }
+
+        if ($role === 'rt') {
+            return buildRtDashboard($db);
+        }
+
+        return buildWargaDashboard($db, $userId);
+    } catch (Throwable $e) {
+        return [
+            'stats' => [],
+            'rows' => [],
+            'secondary_rows' => [],
+            'primary_title' => 'Data Utama',
+            'secondary_title' => 'Ringkasan',
+            'error' => 'Data dashboard belum bisa dimuat: ' . $e->getMessage(),
+        ];
+    }
+}
+
+function buildWargaDashboard(\App\Db\Database $db, int $userId): array
+{
+    return [
+        'stats' => [
+            ['label' => 'Total Laporan', 'value' => dashboardCount($db, "SELECT COUNT(*) FROM laporan_kerusakan WHERE pelapor_id = ?", [$userId]), 'tone' => 'primary'],
+            ['label' => 'Menunggu', 'value' => dashboardCount($db, "SELECT COUNT(*) FROM laporan_kerusakan WHERE pelapor_id = ? AND status = 'menunggu_verifikasi'", [$userId]), 'tone' => 'warning'],
+            ['label' => 'Diproses', 'value' => dashboardCount($db, "SELECT COUNT(*) FROM laporan_kerusakan WHERE pelapor_id = ? AND status IN ('diverifikasi','ditugaskan','dalam_pengerjaan','perlu_tindak_lanjut')", [$userId]), 'tone' => 'info'],
+            ['label' => 'Selesai', 'value' => dashboardCount($db, "SELECT COUNT(*) FROM laporan_kerusakan WHERE pelapor_id = ? AND status = 'selesai'", [$userId]), 'tone' => 'success'],
+        ],
+        'rows' => dashboardRows($db, "SELECT kode_laporan, judul, label_status, status, tingkat_prioritas, lokasi_detail, created_at FROM v_laporan_ringkasan WHERE pelapor_id = ? ORDER BY created_at DESC LIMIT 6", [$userId]),
+        'secondary_rows' => dashboardRows(
+            $db,
+            "SELECT id, kode_laporan, judul, label_status, status, tingkat_prioritas, nama_petugas,
+                    catatan_petugas, tanggal_mulai_kerjakan, tanggal_selesai, created_at,
+                    (SELECT COUNT(*) FROM foto_laporan fl WHERE fl.laporan_id = v_laporan_ringkasan.id) AS jumlah_foto
+             FROM v_laporan_ringkasan
+             WHERE pelapor_id = ?
+               AND status IN ('ditugaskan', 'dalam_pengerjaan', 'perlu_tindak_lanjut', 'selesai')
+             ORDER BY FIELD(status, 'perlu_tindak_lanjut', 'dalam_pengerjaan', 'ditugaskan', 'selesai'), COALESCE(tanggal_selesai, tanggal_mulai_kerjakan, created_at) DESC
+             LIMIT 8",
+            [$userId]
+        ),
+        'primary_title' => 'Laporan Terbaru Saya',
+        'secondary_title' => 'Ringkasan',
+    ];
+}
+
+function buildAdminDashboard(\App\Db\Database $db): array
+{
+    return [
+        'stats' => [
+            ['label' => 'Total Laporan', 'value' => dashboardCount($db, "SELECT COUNT(*) FROM laporan_kerusakan"), 'tone' => 'primary'],
+            ['label' => 'Menunggu Verifikasi', 'value' => dashboardCount($db, "SELECT COUNT(*) FROM laporan_kerusakan WHERE status = 'menunggu_verifikasi'"), 'tone' => 'warning'],
+            ['label' => 'Akun Pending', 'value' => dashboardCount($db, "SELECT COUNT(*) FROM users WHERE status_akun = 'pending'"), 'tone' => 'danger'],
+            ['label' => 'Total User', 'value' => dashboardCount($db, "SELECT COUNT(*) FROM users"), 'tone' => 'success'],
+        ],
+        'rows' => dashboardRows($db, "SELECT kode_laporan, judul, nama_pelapor, label_status, status, tingkat_prioritas, created_at FROM v_laporan_ringkasan ORDER BY created_at DESC LIMIT 7"),
+        'secondary_rows' => dashboardRows($db, "SELECT role, COUNT(*) jumlah FROM users GROUP BY role ORDER BY role"),
+        'primary_title' => 'Laporan Masuk Terbaru',
+        'secondary_title' => 'Jumlah Akun per Role',
+    ];
+}
+
+function buildPetugasDashboard(\App\Db\Database $db, int $userId): array
+{
+    return [
+        'stats' => [
+            ['label' => 'Total Tugas', 'value' => dashboardCount($db, "SELECT COUNT(*) FROM laporan_kerusakan WHERE petugas_id = ?", [$userId]), 'tone' => 'primary'],
+            ['label' => 'Ditugaskan', 'value' => dashboardCount($db, "SELECT COUNT(*) FROM laporan_kerusakan WHERE petugas_id = ? AND status IN ('diverifikasi','ditugaskan')", [$userId]), 'tone' => 'warning'],
+            ['label' => 'Dikerjakan', 'value' => dashboardCount($db, "SELECT COUNT(*) FROM laporan_kerusakan WHERE petugas_id = ? AND status IN ('dalam_pengerjaan','perlu_tindak_lanjut')", [$userId]), 'tone' => 'info'],
+            ['label' => 'Selesai', 'value' => dashboardCount($db, "SELECT COUNT(*) FROM laporan_kerusakan WHERE petugas_id = ? AND status = 'selesai'", [$userId]), 'tone' => 'success'],
+        ],
+        'rows' => dashboardRows($db, "SELECT kode_laporan, judul, nama_pelapor, label_status, status, tingkat_prioritas, lokasi_detail, created_at FROM v_laporan_ringkasan WHERE kode_petugas = (SELECT kode_user FROM users WHERE id = ?) AND status IN ('diverifikasi','ditugaskan','dalam_pengerjaan','perlu_tindak_lanjut') ORDER BY tingkat_prioritas DESC, created_at ASC LIMIT 8", [$userId]),
+        'secondary_rows' => dashboardRows($db, "SELECT kode_laporan, judul, label_status, status, tanggal_selesai, created_at FROM v_laporan_ringkasan WHERE kode_petugas = (SELECT kode_user FROM users WHERE id = ?) AND status = 'selesai' ORDER BY tanggal_selesai DESC LIMIT 5", [$userId]),
+        'primary_title' => 'Tugas Aktif',
+        'secondary_title' => 'Tugas Selesai Terbaru',
+    ];
+}
+
+function buildRtDashboard(\App\Db\Database $db): array
+{
+    return [
+        'stats' => [
+            ['label' => 'Total Laporan', 'value' => dashboardCount($db, "SELECT COUNT(*) FROM laporan_kerusakan"), 'tone' => 'primary'],
+            ['label' => 'Darurat Aktif', 'value' => dashboardCount($db, "SELECT COUNT(*) FROM laporan_kerusakan WHERE tingkat_prioritas = 'darurat' AND status NOT IN ('selesai','ditolak','dibatalkan')"), 'tone' => 'danger'],
+            ['label' => 'Sedang Diproses', 'value' => dashboardCount($db, "SELECT COUNT(*) FROM laporan_kerusakan WHERE status IN ('diverifikasi','ditugaskan','dalam_pengerjaan','perlu_tindak_lanjut')"), 'tone' => 'info'],
+            ['label' => 'Petugas Aktif', 'value' => dashboardCount($db, "SELECT COUNT(*) FROM users WHERE role = 'petugas' AND status_akun = 'aktif'"), 'tone' => 'success'],
+        ],
+        'rows' => dashboardRows($db, "SELECT kode_laporan, judul, nama_pelapor, label_status, status, tingkat_prioritas, lokasi_detail, created_at FROM v_laporan_ringkasan WHERE tingkat_prioritas = 'darurat' AND status NOT IN ('selesai','ditolak','dibatalkan') ORDER BY created_at ASC LIMIT 8"),
+        'secondary_rows' => dashboardRows($db, "SELECT kode_petugas, nama_petugas, jml_aktif, jml_selesai, terakhir_aktif FROM v_monitoring_petugas ORDER BY jml_aktif DESC, nama_petugas LIMIT 8"),
+        'primary_title' => 'Laporan Darurat Aktif',
+        'secondary_title' => 'Monitoring Petugas',
+    ];
+}
+
 function requireAdminWeb(): array
 {
     if (empty($_SESSION['auth_user'])) {

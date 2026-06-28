@@ -8,6 +8,7 @@ require_once __DIR__ . '/auth/processors/laporan_processors.php';
 require_once __DIR__ . '/auth/processors/admin_processors.php';
 require_once __DIR__ . '/auth/processors/rt_processors.php';
 require_once __DIR__ . '/auth/processors/petugas_processors.php';
+require_once __DIR__ . '/auth/processors/profile_processors.php';
 require_once __DIR__ . '/auth/page_renderers.php';
 
 function isWebAuthPage(): bool
@@ -25,7 +26,7 @@ function isWebAuthPage(): bool
         '/', '/login', '/register', '/dashboard', '/logout', '/laporan', 
         '/laporan-saya', '/edit-laporan', '/hapus-laporan', '/admin-users', 
         '/admin-laporan', '/rt-darurat', '/rt-monitoring', '/petugas-tugas', 
-        '/petugas-riwayat', '/reset-password'
+        '/petugas-riwayat', '/profil', '/laporan-pdf', '/reset-password', '/session-ping'
     ], true);
 }
 
@@ -35,28 +36,65 @@ function handleWebAuthPage(): void
         session_start();
     }
 
+    $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
+    $path = authCurrentPath();
+    $publicAuthPaths = ['/', '/login', '/register', '/reset-password'];
+    $isPublicAuthPath = in_array($path, $publicAuthPaths, true);
+
     // Check if user is logged in, and verify their active web session token
     if (!empty($_SESSION['auth_user']) && $path !== '/logout') {
-        $userId = (int)($_SESSION['auth_user']['id'] ?? 0);
-        $sessionId = session_id();
+        if ($isPublicAuthPath && $method === 'POST') {
+            unset($_SESSION['auth_user'], $_SESSION['session_error']);
+        } else {
+            $userId = (int)($_SESSION['auth_user']['id'] ?? 0);
+            $sessionId = session_id();
 
-        $db = \App\Db\Database::getInstance();
-        $activeSession = $db->query(
-            "SELECT id FROM user_sessions WHERE user_id = ? AND session_token = ? AND is_active = 1 LIMIT 1",
-            [$userId, $sessionId]
-        )->fetch();
+            $db = \App\Db\Database::getInstance();
+            $db->query("DELETE FROM user_sessions WHERE expired_at < NOW()");
+            $activeSession = $db->query(
+                "SELECT id FROM user_sessions WHERE user_id = ? AND session_token = ? AND is_active = 1 AND expired_at >= NOW() LIMIT 1",
+                [$userId, $sessionId]
+            )->fetch();
 
-        if (!$activeSession) {
-            unset($_SESSION['auth_user']);
-            $_SESSION['session_error'] = 'Sesi Anda telah berakhir atau login di perangkat lain.';
-            redirectTo('/login');
+            if (!$activeSession) {
+                $db->query("DELETE FROM user_sessions WHERE user_id = ? AND session_token = ?", [$userId, $sessionId]);
+                unset($_SESSION['auth_user']);
+
+                if ($path === '/session-ping') {
+                    http_response_code(401);
+                    return;
+                }
+
+                if ($isPublicAuthPath) {
+                    unset($_SESSION['session_error']);
+                } else {
+                    $_SESSION['session_error'] = 'Sesi Anda telah berakhir karena tidak ada aktivitas atau login di perangkat lain.';
+                    redirectTo('/login');
+                }
+            } else {
+                $db->query(
+                    "UPDATE user_sessions SET expired_at = DATE_ADD(NOW(), INTERVAL ? MINUTE) WHERE id = ?",
+                    [webSessionIdleMinutes(), (int)$activeSession['id']]
+                );
+            }
         }
     }
 
-    $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
-    $path = authCurrentPath();
+    if ($path === '/session-ping') {
+        if (empty($_SESSION['auth_user'])) {
+            http_response_code(401);
+            return;
+        }
+
+        http_response_code(204);
+        return;
+    }
+
     $errors = [];
     $success = '';
+    if ($path === '/login' && $method === 'POST') {
+        unset($_SESSION['session_error']);
+    }
 
     try {
         if ($method === 'POST') {
@@ -82,6 +120,8 @@ function handleWebAuthPage(): void
                 [$errors, $success] = processRtMonitoringForm();
             } elseif ($path === '/petugas-tugas') {
                 [$errors, $success] = processPetugasTaskForm();
+            } elseif ($path === '/profil') {
+                [$errors, $success] = processProfileForm();
             }
         }
     } catch (Throwable $e) {
@@ -91,7 +131,7 @@ function handleWebAuthPage(): void
     if ($path === '/logout') {
         if (!empty($_SESSION['auth_user'])) {
             $db = \App\Db\Database::getInstance();
-            $db->query("UPDATE user_sessions SET is_active = 0 WHERE user_id = ? AND session_token = ?", [
+            $db->query("DELETE FROM user_sessions WHERE user_id = ? AND session_token = ?", [
                 (int)$_SESSION['auth_user']['id'],
                 session_id()
             ]);
@@ -105,7 +145,6 @@ function handleWebAuthPage(): void
             redirectTo('/dashboard');
         }
         if (!empty($_SESSION['session_error'])) {
-            $errors[] = $_SESSION['session_error'];
             unset($_SESSION['session_error']);
         }
         renderAuthPage('login', $errors, $success);
@@ -139,6 +178,10 @@ function handleWebAuthPage(): void
         renderPetugasTugasPage($errors, $success);
     } elseif ($path === '/petugas-riwayat') {
         renderPetugasRiwayatPage();
+    } elseif ($path === '/profil') {
+        renderProfilePage($errors, $success);
+    } elseif ($path === '/laporan-pdf') {
+        renderLaporanPdfPage();
     }
 }
 
@@ -172,7 +215,10 @@ function normalizeWebAuthPath(string $path): string
         '/handlers/rt/rt-monitoring.php' => '/rt-monitoring',
         '/handlers/petugas/petugas-tugas.php' => '/petugas-tugas',
         '/handlers/petugas/petugas-riwayat.php' => '/petugas-riwayat',
+        '/handlers/features/profil.php' => '/profil',
+        '/handlers/features/laporan-pdf.php' => '/laporan-pdf',
         '/handlers/features/reset-password.php' => '/reset-password',
+        '/handlers/features/session-ping.php' => '/session-ping',
     ];
 
     return $aliases[$path] ?? $path;

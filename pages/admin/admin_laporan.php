@@ -7,109 +7,103 @@ declare(strict_types=1);
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Verifikasi Laporan - Admin</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-    <style>
-        body { background: #eef3f8; }
-        .report-card { border: 0; border-radius: 8px; }
-        .text-small { font-size: .875rem; }
-    </style>
+    <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?display=swap&family=Inter%3Awght%40400%3B500%3B600%3B700%3B800">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined">
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 </head>
-<body>
-<main class="container-fluid py-4 px-3 px-lg-4">
-    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 mb-4">
+<body class="bg-[#f7f9fc] font-['Inter',sans-serif] text-[#181c20]">
+<?php renderAppSidebar($admin, 'admin-laporan'); ?>
+<main class="min-h-screen px-4 py-6 sm:px-6 lg:ml-[280px] lg:px-8">
+    <header class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-            <a class="text-decoration-none text-secondary text-small" href="<?= e(urlFor('/dashboard')) ?>">
-                <i class="bi bi-arrow-left"></i> Kembali ke dashboard
+            <a class="inline-flex items-center gap-1 text-sm font-semibold text-[#00409c]" href="<?= e(urlFor('/dashboard')) ?>">
+                <span class="material-symbols-outlined text-base">arrow_back</span>
+                Kembali ke dashboard
             </a>
-            <h1 class="h3 mb-1 mt-2">Verifikasi Laporan</h1>
-            <p class="text-secondary mb-0">Verifikasi, tolak, atau tugaskan laporan ke petugas aktif.</p>
+            <h1 class="mt-2 text-2xl font-bold">Verifikasi Laporan</h1>
+            <p class="text-sm text-[#5d6673]">Verifikasi, tolak, atau tugaskan laporan ke petugas aktif.</p>
         </div>
-        <a class="btn btn-outline-primary" href="<?= e(urlFor('/admin-users')) ?>">
-            <i class="bi bi-people me-1"></i>Kelola User
+        <a class="inline-flex items-center justify-center gap-2 rounded-lg border border-[#c8ced8] bg-white px-4 py-2 font-semibold text-[#00409c] hover:bg-[#eef5ff]" href="<?= e(urlFor('/admin-users')) ?>">
+            <span class="material-symbols-outlined text-lg">group</span>
+            Kelola User
         </a>
-    </div>
+    </header>
 
     <?php if ($errors !== []): ?>
-        <div class="alert alert-danger"><?php foreach ($errors as $error): ?><div><?= e($error) ?></div><?php endforeach; ?></div>
+        <div class="mb-4 rounded-lg border border-[#f2b8b5] bg-[#ffdad6] p-4 text-[#93000a]"><?php foreach ($errors as $error): ?><div><?= e($error) ?></div><?php endforeach; ?></div>
     <?php endif; ?>
     <?php if ($success !== ''): ?>
-        <div class="alert alert-success"><?= e($success) ?></div>
+        <div class="mb-4 rounded-lg border border-[#b8e6c9] bg-[#dcfce7] p-4 text-[#166534]"><?= e($success) ?></div>
     <?php endif; ?>
 
-    <div class="row g-3">
+    <div class="grid gap-4">
         <?php if ($reports === []): ?>
-            <div class="col-12"><div class="card report-card shadow-sm"><div class="card-body text-center text-secondary py-5">Belum ada laporan.</div></div></div>
+            <div class="rounded-lg border border-[#d7dce2] bg-white py-12 text-center text-[#5d6673]">Belum ada laporan.</div>
         <?php endif; ?>
         <?php foreach ($reports as $row): ?>
-            <div class="col-12">
-                <section class="card report-card shadow-sm">
-                    <div class="card-body p-3 p-lg-4">
-                        <div class="d-flex flex-column flex-xl-row justify-content-between gap-3">
-                            <div class="flex-grow-1">
-                                <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
-                                    <span class="badge text-bg-light"><?= e((string)$row['kode_laporan']) ?></span>
-                                    <span class="badge text-bg-<?= $row['status'] === 'menunggu_verifikasi' ? 'warning' : ($row['status'] === 'ditolak' ? 'danger' : 'success') ?>"><?= e((string)$row['label_status']) ?></span>
-                                    <span class="badge text-bg-secondary"><?= e((string)$row['tingkat_prioritas']) ?></span>
-                                </div>
-                                <h2 class="h5 mb-1"><?= e((string)$row['judul']) ?></h2>
-                                <div class="text-secondary text-small mb-2">
-                                    Pelapor: <?= e((string)$row['nama_pelapor']) ?><?= !empty($row['hp_pelapor']) ? ' | HP: ' . e((string)$row['hp_pelapor']) : '' ?>
-                                </div>
-                                <div class="row g-2 text-small">
-                                    <div class="col-md-4"><strong>Kategori:</strong> <?= e((string)$row['nama_kategori']) ?></div>
-                                    <div class="col-md-4"><strong>Lokasi:</strong> <?= e((string)$row['lokasi_detail']) ?></div>
-                                    <div class="col-md-4"><strong>Petugas:</strong> <?= e((string)($row['nama_petugas'] ?? '-')) ?></div>
-                                </div>
-                            </div>
-                            <div style="min-width: 360px;">
-                                <form class="border rounded-2 p-3 bg-light mb-2" method="post" action="<?= e(urlFor('/admin-laporan')) ?>">
-                                    <input type="hidden" name="csrf_token" value="<?= $csrf ?>">
-                                    <input type="hidden" name="laporan_id" value="<?= e((string)$row['id']) ?>">
-                                    <input type="hidden" name="action" value="assign">
-                                    <div class="row g-2">
-                                        <div class="col-7">
-                                            <select class="form-select form-select-sm" name="petugas_id" required>
-                                                <option value="">Pilih petugas</option>
-                                                <?php foreach ($petugas as $person): ?>
-                                                    <option value="<?= e((string)$person['id']) ?>"><?= e((string)$person['nama_lengkap']) ?></option>
-                                                <?php endforeach; ?>
-                                            </select>
-                                        </div>
-                                        <div class="col-5">
-                                            <input class="form-control form-control-sm" name="tanggal_target_selesai" type="date">
-                                        </div>
-                                        <div class="col-12">
-                                            <input class="form-control form-control-sm" name="catatan_admin" placeholder="Catatan penugasan opsional">
-                                        </div>
-                                        <div class="col-12">
-                                            <button class="btn btn-sm btn-primary w-100" type="submit">Tugaskan</button>
-                                        </div>
-                                    </div>
-                                </form>
-                                <div class="d-flex gap-2">
-                                    <form method="post" action="<?= e(urlFor('/admin-laporan')) ?>">
-                                        <input type="hidden" name="csrf_token" value="<?= $csrf ?>">
-                                        <input type="hidden" name="laporan_id" value="<?= e((string)$row['id']) ?>">
-                                        <input type="hidden" name="action" value="verify">
-                                        <button class="btn btn-sm btn-success" type="submit">Verifikasi</button>
-                                    </form>
-                                    <form class="d-flex gap-2 flex-grow-1" method="post" action="<?= e(urlFor('/admin-laporan')) ?>">
-                                        <input type="hidden" name="csrf_token" value="<?= $csrf ?>">
-                                        <input type="hidden" name="laporan_id" value="<?= e((string)$row['id']) ?>">
-                                        <input type="hidden" name="action" value="reject">
-                                        <input class="form-control form-control-sm" name="alasan_penolakan" placeholder="Alasan tolak" required>
-                                        <button class="btn btn-sm btn-outline-danger" type="submit">Tolak</button>
-                                    </form>
-                                </div>
-                            </div>
+            <?php
+            $statusClass = $row['status'] === 'menunggu_verifikasi'
+                ? 'bg-[#fef3c7] text-[#92400e]'
+                : ($row['status'] === 'ditolak' ? 'bg-[#ffdad6] text-[#93000a]' : 'bg-[#dcfce7] text-[#166534]');
+            ?>
+            <section class="rounded-lg border border-[#d7dce2] bg-white p-4 sm:p-6">
+                <div class="grid gap-4 xl:grid-cols-[1fr_380px]">
+                    <div>
+                        <div class="mb-3 flex flex-wrap items-center gap-2">
+                            <span class="rounded bg-[#f0f3f7] px-2 py-1 text-xs font-semibold"><?= e((string)$row['kode_laporan']) ?></span>
+                            <span class="rounded px-2 py-1 text-xs font-semibold <?= $statusClass ?>"><?= e((string)$row['label_status']) ?></span>
+                            <span class="rounded bg-[#eef5ff] px-2 py-1 text-xs font-semibold text-[#00409c]"><?= e((string)$row['tingkat_prioritas']) ?></span>
+                        </div>
+                        <h2 class="text-lg font-bold"><?= e((string)$row['judul']) ?></h2>
+                        <p class="mb-3 text-sm text-[#5d6673]">
+                            Pelapor: <?= e((string)$row['nama_pelapor']) ?><?= !empty($row['hp_pelapor']) ? ' | HP: ' . e((string)$row['hp_pelapor']) : '' ?>
+                        </p>
+                        <div class="grid gap-2 text-sm md:grid-cols-3">
+                            <div><span class="font-semibold">Kategori:</span> <?= e((string)$row['nama_kategori']) ?></div>
+                            <div><span class="font-semibold">Lokasi:</span> <?= e((string)$row['lokasi_detail']) ?></div>
+                            <div><span class="font-semibold">Petugas:</span> <?= e((string)($row['nama_petugas'] ?? '-')) ?></div>
                         </div>
                     </div>
-                </section>
-            </div>
+
+                    <div class="space-y-3">
+                        <form class="rounded-lg border border-[#d7dce2] bg-[#f7f9fc] p-3" method="post" action="<?= e(urlFor('/admin-laporan')) ?>">
+                            <input type="hidden" name="csrf_token" value="<?= $csrf ?>">
+                            <input type="hidden" name="laporan_id" value="<?= e((string)$row['id']) ?>">
+                            <input type="hidden" name="action" value="assign">
+                            <div class="grid gap-2 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
+                                <select class="rounded-lg border-[#c8ced8] text-sm" name="petugas_id" required>
+                                    <option value="">Pilih petugas</option>
+                                    <?php foreach ($petugas as $person): ?>
+                                        <option value="<?= e((string)$person['id']) ?>"><?= e((string)$person['nama_lengkap']) ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                                <input class="rounded-lg border-[#c8ced8] text-sm" name="tanggal_target_selesai" type="date">
+                                <input class="rounded-lg border-[#c8ced8] text-sm sm:col-span-2 xl:col-span-1 2xl:col-span-2" name="catatan_admin" placeholder="Catatan penugasan opsional">
+                                <button class="rounded-lg bg-[#00409c] px-3 py-2 font-semibold text-white hover:bg-[#0056cc] sm:col-span-2 xl:col-span-1 2xl:col-span-2" type="submit">Tugaskan</button>
+                            </div>
+                        </form>
+                        <div class="flex flex-col gap-2 sm:flex-row">
+                            <form method="post" action="<?= e(urlFor('/admin-laporan')) ?>">
+                                <input type="hidden" name="csrf_token" value="<?= $csrf ?>">
+                                <input type="hidden" name="laporan_id" value="<?= e((string)$row['id']) ?>">
+                                <input type="hidden" name="action" value="verify">
+                                <button class="w-full rounded-lg bg-[#16803a] px-3 py-2 font-semibold text-white hover:bg-[#126c31]" type="submit">Verifikasi</button>
+                            </form>
+                            <form class="flex flex-1 gap-2" method="post" action="<?= e(urlFor('/admin-laporan')) ?>">
+                                <input type="hidden" name="csrf_token" value="<?= $csrf ?>">
+                                <input type="hidden" name="laporan_id" value="<?= e((string)$row['id']) ?>">
+                                <input type="hidden" name="action" value="reject">
+                                <input class="min-w-0 flex-1 rounded-lg border-[#c8ced8] text-sm" name="alasan_penolakan" placeholder="Alasan tolak" required>
+                                <button class="rounded-lg border border-[#f2b8b5] px-3 py-2 font-semibold text-[#93000a] hover:bg-[#ffdad6]" type="submit">Tolak</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </section>
         <?php endforeach; ?>
     </div>
 </main>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<?php renderIdleLogoutScript(); ?>
 </body>
 </html>

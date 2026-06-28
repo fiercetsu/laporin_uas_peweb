@@ -38,6 +38,10 @@ class RefreshService
             [hash('sha256', $refresh)]
         )->fetch();
 
+        if ($session && strtotime($session['expired_at']) < time()) {
+            $this->db->query("DELETE FROM user_sessions WHERE session_token = ?", [hash('sha256', $refresh)]);
+        }
+
         if (!$session || strtotime($session['expired_at']) < time() || $session['status_akun'] !== 'aktif' || (int)$claims['sub'] !== (int)$session['user_id']) {
             Response::unauthorized('Sesi tidak aktif. Silakan login ulang.');
         }

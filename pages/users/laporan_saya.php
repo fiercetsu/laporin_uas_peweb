@@ -1,78 +1,79 @@
 <?php
 declare(strict_types=1);
 ?>
-<!doctype html>
+<!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
     <title>Laporan Saya - Laporin RT</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
     <style>
-        body { background: #eef3f8; }
-        .table-card { border: 0; border-radius: 8px; overflow: hidden; }
-        .text-small { font-size: .875rem; }
+        body { font-family: 'Source Sans 3', sans-serif; background-color: #f5f5f5; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .filled-icon { font-variation-settings: 'FILL' 1; }
     </style>
 </head>
-<body>
-<main class="container py-4 py-lg-5">
-    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 mb-4">
+<body class="flex min-h-screen text-[#1b1c1c] bg-[#f5f5f5]">
+<header class="lg:hidden bg-[#00409c] text-white flex justify-between items-center w-full px-4 h-16 shadow-sm fixed top-0 left-0 z-50">
+    <div class="text-xl font-bold">Laporin RT</div>
+    <form method="post" action="<?= e(urlFor('/logout')) ?>">
+        <input type="hidden" name="csrf_token" value="<?= e(csrfToken()) ?>">
+        <button class="p-2 rounded-full" type="submit" aria-label="Keluar"><span class="material-symbols-outlined">logout</span></button>
+    </form>
+</header>
+
+<?php renderAppSidebar($user, 'laporan-saya'); ?>
+
+<main class="flex-1 w-full lg:ml-[280px] pt-20 lg:pt-0 p-4 lg:p-6 lg:max-w-[1440px] mx-auto min-h-screen flex flex-col gap-6">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-            <a class="text-decoration-none text-secondary text-small" href="<?= e(urlFor('/dashboard')) ?>">
-                <i class="bi bi-arrow-left"></i> Kembali ke dashboard
-            </a>
-            <h1 class="h3 mb-1 mt-2">Laporan Saya</h1>
-            <p class="text-secondary mb-0">Daftar laporan yang pernah kamu kirim.</p>
+            <h1 class="text-2xl lg:text-3xl font-semibold">Laporan Saya</h1>
+            <p class="text-[#424654] mt-1">Daftar laporan yang pernah kamu kirim.</p>
         </div>
-        <a class="btn btn-primary" href="<?= e(urlFor('/laporan')) ?>">
-            <i class="bi bi-file-earmark-plus me-1"></i>Buat Laporan
-        </a>
     </div>
 
-    <section class="card table-card shadow-sm">
-        <div class="table-responsive">
-            <table class="table align-middle mb-0">
-                <thead class="table-light">
+    <section class="bg-white border border-[#BDBDBD] rounded-lg shadow-sm overflow-hidden">
+        <div class="bg-[#E6F2FF] px-4 py-4 border-b border-[#BDBDBD]">
+            <h2 class="text-2xl font-semibold">Riwayat Laporan</h2>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left min-w-[900px]">
+                <thead class="bg-[#fbf9f8] border-b border-[#BDBDBD]">
                     <tr>
-                        <th>Kode</th>
-                        <th>Laporan</th>
-                        <th>Lokasi</th>
-                        <th>Kategori</th>
-                        <th>Status</th>
-                        <th>Prioritas</th>
-                        <th>Tanggal</th>
-                        <th class="text-end">Aksi</th>
+                        <th class="px-4 py-3 text-xs font-bold text-[#424654] uppercase tracking-wide">Kode</th>
+                        <th class="px-4 py-3 text-xs font-bold text-[#424654] uppercase tracking-wide">Laporan</th>
+                        <th class="px-4 py-3 text-xs font-bold text-[#424654] uppercase tracking-wide">Lokasi</th>
+                        <th class="px-4 py-3 text-xs font-bold text-[#424654] uppercase tracking-wide">Status</th>
+                        <th class="px-4 py-3 text-xs font-bold text-[#424654] uppercase tracking-wide">Prioritas</th>
+                        <th class="px-4 py-3 text-xs font-bold text-[#424654] uppercase tracking-wide">Tanggal</th>
+                        <th class="px-4 py-3 text-xs font-bold text-[#424654] uppercase tracking-wide text-right">Aksi</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody class="divide-y divide-[#BDBDBD]">
                     <?php if ($reports === []): ?>
-                        <tr>
-                            <td class="text-center text-secondary py-5" colspan="8">Belum ada laporan.</td>
-                        </tr>
+                        <tr><td class="px-4 py-12 text-center text-[#424654]" colspan="7">Belum ada laporan.</td></tr>
                     <?php endif; ?>
                     <?php foreach ($reports as $report): ?>
-                        <tr>
-                            <td class="fw-semibold"><?= e((string)$report['kode_laporan']) ?></td>
-                            <td>
-                                <div class="fw-semibold"><?= e((string)$report['judul']) ?></div>
+                        <tr class="hover:bg-[#f5f3f3]">
+                            <td class="px-4 py-4 font-mono text-xs font-semibold"><?= e((string)$report['kode_laporan']) ?></td>
+                            <td class="px-4 py-4">
+                                <div class="font-semibold"><?= e((string)$report['judul']) ?></div>
+                                <div class="text-xs text-[#424654]"><?= e((string)$report['nama_kategori']) ?></div>
                             </td>
-                            <td><?= e((string)$report['lokasi_detail']) ?></td>
-                            <td><?= e((string)$report['nama_kategori']) ?></td>
-                            <td><span class="badge text-bg-light"><?= e((string)$report['label_status']) ?></span></td>
-                            <td><?= e((string)$report['tingkat_prioritas']) ?></td>
-                            <td class="text-secondary text-small"><?= e(formatDashboardDate((string)$report['created_at'])) ?></td>
-                            <td class="text-end">
-                                <div class="d-inline-flex gap-2">
-                                    <a class="btn btn-sm btn-outline-primary" href="<?= e(urlFor('/edit-laporan') . '?id=' . (int)$report['id']) ?>">
-                                        <i class="bi bi-pencil-square"></i> Edit
-                                    </a>
+                            <td class="px-4 py-4 text-sm"><?= e((string)$report['lokasi_detail']) ?></td>
+                            <td class="px-4 py-4"><span class="px-2 py-1 rounded text-xs font-semibold bg-gray-100 text-gray-800"><?= e((string)$report['label_status']) ?></span></td>
+                            <td class="px-4 py-4 text-sm capitalize"><?= e((string)$report['tingkat_prioritas']) ?></td>
+                            <td class="px-4 py-4 text-xs text-[#424654] whitespace-nowrap"><?= e(formatDashboardDate((string)$report['created_at'])) ?></td>
+                            <td class="px-4 py-4 text-right">
+                                <div class="inline-flex gap-2">
+                                    <a class="rounded border border-[#00409c] px-3 py-1 text-sm font-semibold text-[#00409c] hover:bg-[#00409c]/10" href="<?= e(urlFor('/edit-laporan') . '?id=' . (int)$report['id']) ?>">Edit</a>
                                     <form method="post" action="<?= e(urlFor('/hapus-laporan')) ?>" onsubmit="return confirm('Hapus laporan ini? Data yang dihapus tidak bisa dikembalikan.');">
                                         <input type="hidden" name="csrf_token" value="<?= e(csrfToken()) ?>">
                                         <input type="hidden" name="id" value="<?= e((string)$report['id']) ?>">
-                                        <button class="btn btn-sm btn-outline-danger" type="submit">
-                                            <i class="bi bi-trash"></i> Hapus
-                                        </button>
+                                        <button class="rounded border border-rose-600 px-3 py-1 text-sm font-semibold text-rose-700 hover:bg-rose-50" type="submit">Hapus</button>
                                     </form>
                                 </div>
                             </td>
@@ -83,6 +84,7 @@ declare(strict_types=1);
         </div>
     </section>
 </main>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<?php renderIdleLogoutScript(); ?>
 </body>
 </html>
