@@ -115,6 +115,11 @@ function renderEditLaporanPage(array $errors = [], string $success = ''): void
         redirectTo('/laporan-saya');
     }
 
+    // Laporan selesai tidak bisa diedit oleh warga
+    if ($report['status'] === 'selesai') {
+        redirectTo('/laporan-saya');
+    }
+
     header('Content-Type: text/html; charset=UTF-8');
     $user = $_SESSION['auth_user'];
     $categories = getActiveCategories();

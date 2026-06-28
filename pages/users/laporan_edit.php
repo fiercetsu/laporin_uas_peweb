@@ -25,7 +25,7 @@ declare(strict_types=1);
                             <span class="material-symbols-outlined text-base">arrow_back</span>
                             Kembali ke Laporan Saya
                         </a>
-                        <h1 class="mt-2 text-2xl font-bold">Edit Laporan</h1>
+                        <h1 class="mt-2 text-2xl font-bold"><?= $report['status'] === 'ditolak' ? 'Update & Ajukan Ulang Laporan' : 'Edit Laporan' ?></h1>
                         <p class="text-sm text-[#5d6673]">
                             <?= e((string)$report['kode_laporan']) ?> | Status: <?= e((string)$report['label_status']) ?>
                         </p>
@@ -48,6 +48,19 @@ declare(strict_types=1);
 
                 <?php if ($success !== ''): ?>
                     <div class="mb-4 rounded-lg border border-[#b8e6c9] bg-[#dcfce7] p-4 text-[#166534]"><?= e($success) ?></div>
+                <?php endif; ?>
+
+                <?php if ($report['status'] === 'ditolak' && !empty($report['alasan_penolakan'])): ?>
+                    <div class="mb-4 rounded-lg border border-amber-300 bg-amber-50 p-4 text-amber-800">
+                        <div class="flex items-start gap-2">
+                            <span class="material-symbols-outlined text-lg mt-0.5">warning</span>
+                            <div>
+                                <div class="font-semibold">Laporan ini ditolak</div>
+                                <div class="text-sm mt-1">Alasan: <?= e((string)$report['alasan_penolakan']) ?></div>
+                                <div class="text-sm mt-1 text-amber-600">Silakan perbarui laporan dan ajukan ulang.</div>
+                            </div>
+                        </div>
+                    </div>
                 <?php endif; ?>
 
                 <form class="rounded-lg border border-[#d7dce2] bg-white" method="post" action="<?= e($action) ?>" enctype="multipart/form-data">
@@ -122,8 +135,8 @@ declare(strict_types=1);
                     <div class="flex justify-end gap-2 border-t border-[#d7dce2] px-4 py-4 sm:px-6">
                         <a class="rounded-lg px-4 py-2 font-semibold text-[#5d6673] hover:bg-[#f0f3f7]" href="<?= e(urlFor('/laporan-saya')) ?>">Batal</a>
                         <button class="inline-flex items-center gap-2 rounded-lg bg-[#00409c] px-4 py-2 font-semibold text-white hover:bg-[#0056cc]" type="submit">
-                            <span class="material-symbols-outlined text-lg">save</span>
-                            Simpan Perubahan
+                            <span class="material-symbols-outlined text-lg"><?= $report['status'] === 'ditolak' ? 'send' : 'save' ?></span>
+                            <?= $report['status'] === 'ditolak' ? 'Ajukan Ulang' : 'Simpan Perubahan' ?>
                         </button>
                     </div>
                 </form>
@@ -132,6 +145,20 @@ declare(strict_types=1);
     </div>
 </main>
 <script src="<?= e(urlFor('/pages/laporan.js')) ?>"></script>
+<script>
+(function() {
+    var form = document.querySelector('form');
+    if (form) {
+        form.addEventListener('submit', function() {
+            var submitBtn = form.querySelector('button[type="submit"]');
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '⏳ Menyimpan...';
+            }
+        });
+    }
+})();
+</script>
 <?php renderIdleLogoutScript(); ?>
 </body>
 </html>

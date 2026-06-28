@@ -219,15 +219,14 @@ $toneMap = [
             </div>
             <div class="overflow-x-auto">
                 <table class="w-full text-left min-w-[900px]">
-                    <thead class="bg-[#fbf9f8] border-b border-[#BDBDBD]"><tr><th class="px-4 py-3 text-xs font-bold uppercase">Kode</th><th class="px-4 py-3 text-xs font-bold uppercase">Laporan</th><th class="px-4 py-3 text-xs font-bold uppercase">Petugas</th><th class="px-4 py-3 text-xs font-bold uppercase">Ulasan</th><th class="px-4 py-3 text-xs font-bold uppercase">Foto</th></tr></thead>
+                    <thead class="bg-[#fbf9f8] border-b border-[#BDBDBD]"><tr><th class="px-4 py-3 text-xs font-bold uppercase">Kode</th><th class="px-4 py-3 text-xs font-bold uppercase">Laporan</th><th class="px-4 py-3 text-xs font-bold uppercase">Petugas</th><th class="px-4 py-3 text-xs font-bold uppercase">Foto</th></tr></thead>
                     <tbody class="divide-y divide-[#BDBDBD]">
-                    <?php if ($selesaiTasks === []): ?><tr><td colspan="5" class="px-4 py-10 text-center text-[#424654]">Belum ada riwayat laporan selesai.</td></tr><?php endif; ?>
+                    <?php if ($selesaiTasks === []): ?><tr><td colspan="4" class="px-4 py-10 text-center text-[#424654]">Belum ada riwayat laporan selesai.</td></tr><?php endif; ?>
                     <?php foreach ($selesaiTasks as $row): ?>
                         <tr class="hover:bg-[#f5f3f3]">
                             <td class="px-4 py-4 font-mono text-xs font-semibold"><?= e((string)$row['kode_laporan']) ?></td>
                             <td class="px-4 py-4"><div class="font-semibold"><?= e((string)$row['judul']) ?></div><div class="text-xs text-[#424654]"><?= e((string)$row['nama_pelapor']) ?> | <?= e((string)$row['nama_kategori']) ?></div><span class="px-2 py-1 rounded text-xs font-semibold bg-emerald-100 text-emerald-800"><?= e((string)$row['label_status']) ?></span></td>
                             <td class="px-4 py-4 text-sm"><div><?= e((string)($row['nama_petugas'] ?? '-')) ?></div><div class="text-xs text-[#424654]">Selesai: <?= e(formatDashboardDate((string)($row['tanggal_selesai'] ?? ''))) ?></div></td>
-                            <td class="px-4 py-4 text-sm"><?= !empty($row['rating_warga']) ? e((string)$row['rating_warga']) . '/5 - ' . e((string)($row['ulasan_warga'] ?? 'Tidak ada ulasan')) : '<span class="text-[#424654]">Belum diulas</span>' ?></td>
                             <td class="px-4 py-4"><button class="photo-button text-[#00409c] border border-[#00409c] px-3 py-1 rounded text-sm" type="button" data-photos="<?= e(json_encode($formatPhotos($photosByReport[(int)$row['id']] ?? []))) ?>">Lihat Foto (<?= count($photosByReport[(int)$row['id']] ?? []) ?>)</button></td>
                         </tr>
                     <?php endforeach; ?>

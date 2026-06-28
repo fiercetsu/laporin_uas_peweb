@@ -128,6 +128,8 @@ function handleWebAuthPage(): void
         $errors = ['Gagal memproses permintaan: ' . $e->getMessage()];
     }
 
+
+
     if ($path === '/logout') {
         if (!empty($_SESSION['auth_user'])) {
             $db = \App\Db\Database::getInstance();

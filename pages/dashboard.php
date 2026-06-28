@@ -179,15 +179,6 @@ if ($role === 'warga' && $secondaryRows !== []) {
             <h1 class="text-headline-md font-headline-md text-on-surface"><?= e($roleTitles[$role] ?? 'Dashboard') ?></h1>
             <p class="text-body-md font-body-md text-on-surface-variant mt-1"><?= e($roleDescriptions[$role] ?? 'Ringkasan aktivitas akun.') ?></p>
         </div>
-        <div class="flex items-center gap-3 bg-white border border-[#BDBDBD] rounded-lg p-3 shadow-sm">
-            <div class="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-lg uppercase">
-                <?= substr(e((string)$user['nama_lengkap']), 0, 1) ?>
-            </div>
-            <div class="text-left text-body-md font-body-md text-on-surface-variant">
-                <div class="font-semibold text-on-surface"><?= e((string)$user['nama_lengkap']) ?></div>
-                <div class="text-xs">NIK: <?= e((string)$user['nik']) ?> | ID: <?= e((string)($user['kode_user'] ?? 'Warga')) ?></div>
-            </div>
-        </div>
     </div>
 
     <?php if (!empty($dashboard['error'])): ?>

@@ -84,7 +84,6 @@ $printedAt = date('d/m/Y H:i');
                     <div><span class="font-semibold">Lokasi:</span> <?= e((string)$report['lokasi_detail']) ?></div>
                     <div><span class="font-semibold">Petugas:</span> <?= e((string)($report['nama_petugas'] ?? '-')) ?></div>
                     <div><span class="font-semibold">Durasi:</span> <?= e((string)($report['durasi_hari'] ?? '-')) ?> hari</div>
-                    <div><span class="font-semibold">Rating warga:</span> <?= e((string)($report['rating_warga'] ?? '-')) ?></div>
                     <div class="md:col-span-2"><span class="font-semibold">Deskripsi:</span> <?= e((string)($report['deskripsi'] ?? '-')) ?></div>
                     <div class="md:col-span-2"><span class="font-semibold">Catatan petugas:</span> <?= e((string)($report['catatan_petugas'] ?? '-')) ?></div>
                 </div>

@@ -149,7 +149,7 @@ function renderAppSidebar(array $user, string $active): void
     ?>
     <aside class="hidden lg:flex flex-col h-screen fixed left-0 top-0 py-6 w-[280px] bg-[#003D7A] text-white z-40">
         <div class="px-6 mb-8 flex items-center gap-4">
-            <div class="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center text-white font-bold text-xl uppercase">
+            <div class="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center text-white font-bold text-xl uppercase shrink-0">
                 <?= e($initial) ?>
             </div>
             <div>
@@ -322,6 +322,17 @@ function renderCreateReportModalScript(bool $open = false): void
                 closeModal();
             }
         });
+
+        var form = modal.querySelector('form');
+        if (form) {
+            form.addEventListener('submit', function () {
+                var submitBtn = form.querySelector('button[type="submit"]');
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                    submitBtn.innerHTML = '<span class="inline-block animate-spin mr-2">⏳</span> Mengirim...';
+                }
+            });
+        }
 
         <?php if ($open): ?>
         openModal();

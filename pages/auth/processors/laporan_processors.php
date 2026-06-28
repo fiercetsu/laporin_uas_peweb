@@ -88,6 +88,11 @@ function processEditLaporanForm(): array
         return [['Laporan tidak ditemukan atau bukan milik akun ini.'], ''];
     }
 
+    // Laporan selesai tidak bisa diedit oleh warga
+    if ($existing['status'] === 'selesai') {
+        return [['Laporan yang sudah selesai tidak dapat diedit.'], ''];
+    }
+
     $input = [
         'kategori_id' => trim((string)($_POST['kategori_id'] ?? '')),
         'judul' => trim((string)($_POST['judul'] ?? '')),
@@ -111,37 +116,53 @@ function processEditLaporanForm(): array
             return [['Kategori laporan tidak valid.'], ''];
         }
 
+        // Jika laporan ditolak dan diedit ulang, reset status ke menunggu_verifikasi
+        $wasDitolak = $existing['status'] === 'ditolak';
+        $newStatus = $wasDitolak ? 'menunggu_verifikasi' : $existing['status'];
+        $statusSetClause = $wasDitolak ? ', status = ?, alasan_penolakan = NULL' : '';
+
+        $params = [
+            (int)$input['kategori_id'],
+            $input['judul'],
+            $input['deskripsi'],
+            $input['lokasi_detail'],
+            nullableInput($input['latitude']),
+            nullableInput($input['longitude']),
+            nullableInput($input['akurasi_gps_meter']),
+            nullableInput($input['maps_url']),
+            $input['tingkat_prioritas'] !== '' ? $input['tingkat_prioritas'] : 'sedang',
+        ];
+        if ($wasDitolak) {
+            $params[] = 'menunggu_verifikasi';
+        }
+        $params[] = $reportId;
+        $params[] = (int)$user['id'];
+
         $db->beginTransaction();
         $db->query(
             "UPDATE laporan_kerusakan
              SET kategori_id = ?, judul = ?, deskripsi = ?, lokasi_detail = ?, latitude = ?, longitude = ?,
-                 akurasi_gps_meter = ?, maps_url = ?, tingkat_prioritas = ?
+                 akurasi_gps_meter = ?, maps_url = ?, tingkat_prioritas = ?{$statusSetClause}
              WHERE id = ? AND pelapor_id = ?",
-            [
-                (int)$input['kategori_id'],
-                $input['judul'],
-                $input['deskripsi'],
-                $input['lokasi_detail'],
-                nullableInput($input['latitude']),
-                nullableInput($input['longitude']),
-                nullableInput($input['akurasi_gps_meter']),
-                nullableInput($input['maps_url']),
-                $input['tingkat_prioritas'] !== '' ? $input['tingkat_prioritas'] : 'sedang',
-                $reportId,
-                (int)$user['id'],
-            ]
+            $params
         );
 
+        $keterangan = $wasDitolak
+            ? 'Laporan diperbarui dan diajukan ulang oleh warga.'
+            : 'Laporan diedit oleh warga melalui halaman web.';
         $db->query(
             "INSERT INTO histori_laporan (laporan_id, diubah_oleh, status_lama, status_baru, keterangan)
-             VALUES (?, ?, ?, ?, 'Laporan diedit oleh warga melalui halaman web.')",
-            [$reportId, (int)$user['id'], $existing['status'], $existing['status']]
+             VALUES (?, ?, ?, ?, ?)",
+            [$reportId, (int)$user['id'], $existing['status'], $newStatus, $keterangan]
         );
 
         saveLaporanPhotos($db, $reportId, (int)$user['id'], $_FILES);
         $db->commit();
 
-        return [[], 'Laporan berhasil diperbarui.'];
+        $msg = $wasDitolak
+            ? 'Laporan berhasil diperbarui dan diajukan ulang untuk verifikasi.'
+            : 'Laporan berhasil diperbarui.';
+        return [[], $msg];
     } catch (Throwable $e) {
         if (isset($db) && $db->inTransaction()) {
             $db->rollback();
@@ -160,6 +181,11 @@ function processDeleteLaporanForm(): void
     $reportId = (int)($_POST['id'] ?? 0);
     $existing = getOwnedReport($reportId, (int)$user['id']);
     if (!$existing) {
+        redirectTo('/laporan-saya');
+    }
+
+    // Laporan selesai tidak bisa dihapus oleh warga
+    if ($existing['status'] === 'selesai') {
         redirectTo('/laporan-saya');
     }
 
@@ -253,3 +279,5 @@ function saveLaporanPhotos(\App\Db\Database $db, int $laporanId, int $userId, ar
         );
     }
 }
+
+

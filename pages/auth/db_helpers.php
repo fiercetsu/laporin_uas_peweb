@@ -18,7 +18,18 @@ function getOwnedReport(int $id, int $userId): ?array
         return \App\Db\Database::getInstance()
             ->query(
                 "SELECT id, kode_laporan, judul, deskripsi, lokasi_detail, latitude, longitude,
-                        akurasi_gps_meter, maps_url, tingkat_prioritas, status, created_at
+                        akurasi_gps_meter, maps_url, tingkat_prioritas, status, alasan_penolakan, created_at,
+                        CASE status
+                            WHEN 'menunggu_verifikasi' THEN 'Menunggu Verifikasi'
+                            WHEN 'diverifikasi' THEN 'Sudah Diverifikasi'
+                            WHEN 'ditugaskan' THEN 'Sudah Ditugaskan'
+                            WHEN 'dalam_pengerjaan' THEN 'Sedang Dikerjakan'
+                            WHEN 'perlu_tindak_lanjut' THEN 'Perlu Tindak Lanjut'
+                            WHEN 'selesai' THEN 'Selesai'
+                            WHEN 'ditolak' THEN 'Ditolak'
+                            WHEN 'dibatalkan' THEN 'Dibatalkan'
+                            ELSE status
+                        END AS label_status
                  FROM laporan_kerusakan
                  WHERE id = ? AND pelapor_id = ? LIMIT 1",
                 [$id, $userId]
@@ -34,7 +45,7 @@ function getMyReports(int $userId): array
     try {
         return \App\Db\Database::getInstance()
             ->query(
-                "SELECT id, kode_laporan, judul, nama_kategori, label_status, tingkat_prioritas, lokasi_detail, created_at
+                "SELECT id, kode_laporan, judul, nama_kategori, label_status, status, tingkat_prioritas, lokasi_detail, rating_warga, ulasan_warga, created_at
                  FROM v_laporan_ringkasan
                  WHERE pelapor_id = ?
                  ORDER BY created_at DESC",

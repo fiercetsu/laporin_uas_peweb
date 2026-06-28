@@ -68,13 +68,27 @@ declare(strict_types=1);
                             <td class="px-4 py-4 text-sm capitalize"><?= e((string)$report['tingkat_prioritas']) ?></td>
                             <td class="px-4 py-4 text-xs text-[#424654] whitespace-nowrap"><?= e(formatDashboardDate((string)$report['created_at'])) ?></td>
                             <td class="px-4 py-4 text-right">
-                                <div class="inline-flex gap-2">
-                                    <a class="rounded border border-[#00409c] px-3 py-1 text-sm font-semibold text-[#00409c] hover:bg-[#00409c]/10" href="<?= e(urlFor('/edit-laporan') . '?id=' . (int)$report['id']) ?>">Edit</a>
-                                    <form method="post" action="<?= e(urlFor('/hapus-laporan')) ?>" onsubmit="return confirm('Hapus laporan ini? Data yang dihapus tidak bisa dikembalikan.');">
-                                        <input type="hidden" name="csrf_token" value="<?= e(csrfToken()) ?>">
-                                        <input type="hidden" name="id" value="<?= e((string)$report['id']) ?>">
-                                        <button class="rounded border border-rose-600 px-3 py-1 text-sm font-semibold text-rose-700 hover:bg-rose-50" type="submit">Hapus</button>
-                                    </form>
+                                <div class="inline-flex gap-2 items-center">
+                                    <?php if ($report['status'] === 'selesai'): ?>
+                                        <span class="inline-flex items-center gap-1 rounded bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+                                            <span class="material-symbols-outlined text-sm">check_circle</span>
+                                            Selesai
+                                        </span>
+                                    <?php elseif ($report['status'] === 'ditolak'): ?>
+                                        <a class="rounded border border-amber-500 bg-amber-50 px-3 py-1 text-sm font-semibold text-amber-700 hover:bg-amber-100" href="<?= e(urlFor('/edit-laporan') . '?id=' . (int)$report['id']) ?>">Update & Ajukan Ulang</a>
+                                        <form method="post" action="<?= e(urlFor('/hapus-laporan')) ?>" onsubmit="return confirm('Hapus laporan ini? Data yang dihapus tidak bisa dikembalikan.');">
+                                            <input type="hidden" name="csrf_token" value="<?= e(csrfToken()) ?>">
+                                            <input type="hidden" name="id" value="<?= e((string)$report['id']) ?>">
+                                            <button class="rounded border border-rose-600 px-3 py-1 text-sm font-semibold text-rose-700 hover:bg-rose-50" type="submit">Hapus</button>
+                                        </form>
+                                    <?php else: ?>
+                                        <a class="rounded border border-[#00409c] px-3 py-1 text-sm font-semibold text-[#00409c] hover:bg-[#00409c]/10" href="<?= e(urlFor('/edit-laporan') . '?id=' . (int)$report['id']) ?>">Edit</a>
+                                        <form method="post" action="<?= e(urlFor('/hapus-laporan')) ?>" onsubmit="return confirm('Hapus laporan ini? Data yang dihapus tidak bisa dikembalikan.');">
+                                            <input type="hidden" name="csrf_token" value="<?= e(csrfToken()) ?>">
+                                            <input type="hidden" name="id" value="<?= e((string)$report['id']) ?>">
+                                            <button class="rounded border border-rose-600 px-3 py-1 text-sm font-semibold text-rose-700 hover:bg-rose-50" type="submit">Hapus</button>
+                                        </form>
+                                    <?php endif; ?>
                                 </div>
                             </td>
                         </tr>
