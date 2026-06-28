@@ -100,8 +100,8 @@ $toneMap = [
                                 ?>
                                     <div class="mt-2 flex flex-wrap gap-1">
                                         <?php foreach ($photos as $photo): ?>
-                                            <a href="<?= e(urlFor($photo['path_file'])) ?>" target="_blank" class="inline-block border border-[#c8ced8] rounded overflow-hidden p-0.5 hover:border-[#00409c] transition-all bg-white">
-                                                <img src="<?= e(urlFor($photo['path_file'])) ?>" alt="Foto Bukti" class="h-8 w-8 object-cover rounded-sm">
+                                            <a href="<?= e(urlFor('/backend/' . $photo['path_file'])) ?>" target="_blank" class="inline-block border border-[#c8ced8] rounded overflow-hidden p-0.5 hover:border-[#00409c] transition-all bg-white">
+                                                <img src="<?= e(urlFor('/backend/' . $photo['path_file'])) ?>" alt="Foto Bukti" class="h-8 w-8 object-cover rounded-sm">
                                             </a>
                                         <?php endforeach; ?>
                                     </div>
