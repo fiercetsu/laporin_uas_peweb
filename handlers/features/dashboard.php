@@ -8,4 +8,4 @@ $basePath = ($basePath === '.' || $basePath === '/') ? '' : $basePath;
 $_SERVER['REQUEST_URI'] = $basePath . '/dashboard';
 $_SERVER['SCRIPT_NAME'] = $basePath . '/index.php';
 
-require __DIR__ . '/index.php';
+require __DIR__ . '/../../index.php';

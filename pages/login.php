@@ -80,7 +80,7 @@ declare(strict_types=1);
     </div>
     <footer class="text-center px-4 py-3 bg-light border-top">
         <span class="text-secondary">Belum punya akun?</span>
-        <a class="fw-bold text-decoration-none" href="<?= e(urlFor('/register.php')) ?>">Daftar di sini</a>
+        <a class="fw-bold text-decoration-none" href="<?= e(urlFor('/register')) ?>">Daftar di sini</a>
     </footer>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
