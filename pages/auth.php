@@ -35,6 +35,24 @@ function handleWebAuthPage(): void
         session_start();
     }
 
+    // Check if user is logged in, and verify their active web session token
+    if (!empty($_SESSION['auth_user']) && $path !== '/logout') {
+        $userId = (int)($_SESSION['auth_user']['id'] ?? 0);
+        $sessionId = session_id();
+
+        $db = \App\Db\Database::getInstance();
+        $activeSession = $db->query(
+            "SELECT id FROM user_sessions WHERE user_id = ? AND session_token = ? AND is_active = 1 LIMIT 1",
+            [$userId, $sessionId]
+        )->fetch();
+
+        if (!$activeSession) {
+            unset($_SESSION['auth_user']);
+            $_SESSION['session_error'] = 'Sesi Anda telah berakhir atau login di perangkat lain.';
+            redirectTo('/login');
+        }
+    }
+
     $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
     $path = authCurrentPath();
     $errors = [];
@@ -71,13 +89,24 @@ function handleWebAuthPage(): void
     }
 
     if ($path === '/logout') {
-        unset($_SESSION['auth_user']);
+        if (!empty($_SESSION['auth_user'])) {
+            $db = \App\Db\Database::getInstance();
+            $db->query("UPDATE user_sessions SET is_active = 0 WHERE user_id = ? AND session_token = ?", [
+                (int)$_SESSION['auth_user']['id'],
+                session_id()
+            ]);
+            unset($_SESSION['auth_user']);
+        }
         redirectTo('/login');
     }
 
     if ($path === '/' || $path === '/login') {
         if (!empty($_SESSION['auth_user'])) {
             redirectTo('/dashboard');
+        }
+        if (!empty($_SESSION['session_error'])) {
+            $errors[] = $_SESSION['session_error'];
+            unset($_SESSION['session_error']);
         }
         renderAuthPage('login', $errors, $success);
     } elseif ($path === '/register') {
