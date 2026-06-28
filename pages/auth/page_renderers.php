@@ -79,7 +79,7 @@ function renderLaporanPage(array $errors = [], string $success = ''): void
     require __DIR__ . '/../laporan.php';
 }
 
-function renderLaporanSayaPage(): void
+function renderLaporanSayaPage(array $errors = [], string $success = ''): void
 {
     if (empty($_SESSION['auth_user'])) {
         redirectTo('/login');
@@ -150,6 +150,17 @@ function renderAdminLaporanPage(array $errors = [], string $success = ''): void
     $petugas = getActivePetugas();
     $csrf = e(csrfToken());
 
+    // Pre-load photos for all reports
+    $photosByReport = [];
+    $ids = array_map(static fn(array $r): int => (int)$r['id'], $reports);
+    if ($ids !== []) {
+        foreach (getReportsPhotos($ids) as $photo) {
+            $photosByReport[(int)$photo['laporan_id']][] = [
+                'url' => urlFor('/backend/' . $photo['path_file']),
+            ];
+        }
+    }
+
     require __DIR__ . '/../admin/admin_laporan.php';
 }
 
@@ -203,6 +214,17 @@ function renderPetugasTugasPage(array $errors = [], string $success = ''): void
     header('Content-Type: text/html; charset=UTF-8');
     $tasks = getPetugasActiveTasks((int)$petugas['id']);
     $csrf = e(csrfToken());
+
+    // Pre-load photos for all tasks
+    $photosByReport = [];
+    $ids = array_map(static fn(array $t): int => (int)$t['id'], $tasks);
+    if ($ids !== []) {
+        foreach (getReportsPhotos($ids) as $photo) {
+            $photosByReport[(int)$photo['laporan_id']][] = [
+                'url' => urlFor('/backend/' . $photo['path_file']),
+            ];
+        }
+    }
 
     require __DIR__ . '/../petugas/petugas_tugas.php';
 }

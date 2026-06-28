@@ -244,10 +244,16 @@ function processAdminLaporanForm(): array
             return [['Petugas tidak valid atau belum aktif.'], ''];
         }
 
-        adminChangeReportStatus($db, $report, (int)$admin['id'], 'ditugaskan', trim((string)($_POST['catatan_admin'] ?? 'Laporan ditugaskan ke petugas.')), [
+        $prioritas = trim((string)($_POST['tingkat_prioritas'] ?? ''));
+        $extraAssign = [
             'petugas_id' => $petugasId,
             'tanggal_target_selesai' => nullableInput(trim((string)($_POST['tanggal_target_selesai'] ?? ''))),
-        ]);
+        ];
+        if (in_array($prioritas, ['rendah', 'sedang', 'tinggi', 'darurat'], true)) {
+            $extraAssign['tingkat_prioritas'] = $prioritas;
+        }
+
+        adminChangeReportStatus($db, $report, (int)$admin['id'], 'ditugaskan', trim((string)($_POST['catatan_admin'] ?? 'Laporan ditugaskan ke petugas.')), $extraAssign);
 
         return [[], 'Laporan berhasil ditugaskan ke petugas.'];
     } catch (Throwable $e) {
@@ -266,7 +272,7 @@ function adminChangeReportStatus(\App\Db\Database $db, array $report, int $admin
     }
 
     foreach ($extra as $field => $value) {
-        if (in_array($field, ['petugas_id', 'tanggal_target_selesai', 'alasan_penolakan'], true)) {
+        if (in_array($field, ['petugas_id', 'tanggal_target_selesai', 'alasan_penolakan', 'tingkat_prioritas'], true)) {
             $sets[] = "{$field} = ?";
             $params[] = $value;
         }

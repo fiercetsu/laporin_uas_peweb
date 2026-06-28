@@ -35,6 +35,15 @@ declare(strict_types=1);
         </div>
     </div>
 
+    <?php if (!empty($errors)): ?>
+        <div class="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-rose-800">
+            <?php foreach ($errors as $error): ?><div><?= e($error) ?></div><?php endforeach; ?>
+        </div>
+    <?php endif; ?>
+    <?php if (!empty($success)): ?>
+        <div class="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-800"><?= e($success) ?></div>
+    <?php endif; ?>
+
     <section class="bg-white border border-[#BDBDBD] rounded-lg shadow-sm overflow-hidden">
         <div class="bg-[#E6F2FF] px-4 py-4 border-b border-[#BDBDBD]">
             <h2 class="text-2xl font-semibold">Riwayat Laporan</h2>
@@ -47,14 +56,13 @@ declare(strict_types=1);
                         <th class="px-4 py-3 text-xs font-bold text-[#424654] uppercase tracking-wide">Laporan</th>
                         <th class="px-4 py-3 text-xs font-bold text-[#424654] uppercase tracking-wide">Lokasi</th>
                         <th class="px-4 py-3 text-xs font-bold text-[#424654] uppercase tracking-wide">Status</th>
-                        <th class="px-4 py-3 text-xs font-bold text-[#424654] uppercase tracking-wide">Prioritas</th>
                         <th class="px-4 py-3 text-xs font-bold text-[#424654] uppercase tracking-wide">Tanggal</th>
                         <th class="px-4 py-3 text-xs font-bold text-[#424654] uppercase tracking-wide text-right">Aksi</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-[#BDBDBD]">
                     <?php if ($reports === []): ?>
-                        <tr><td class="px-4 py-12 text-center text-[#424654]" colspan="7">Belum ada laporan.</td></tr>
+                        <tr><td class="px-4 py-12 text-center text-[#424654]" colspan="6">Belum ada laporan.</td></tr>
                     <?php endif; ?>
                     <?php foreach ($reports as $report): ?>
                         <tr class="hover:bg-[#f5f3f3]">
@@ -65,7 +73,6 @@ declare(strict_types=1);
                             </td>
                             <td class="px-4 py-4 text-sm"><?= e((string)$report['lokasi_detail']) ?></td>
                             <td class="px-4 py-4"><span class="px-2 py-1 rounded text-xs font-semibold bg-gray-100 text-gray-800"><?= e((string)$report['label_status']) ?></span></td>
-                            <td class="px-4 py-4 text-sm capitalize"><?= e((string)$report['tingkat_prioritas']) ?></td>
                             <td class="px-4 py-4 text-xs text-[#424654] whitespace-nowrap"><?= e(formatDashboardDate((string)$report['created_at'])) ?></td>
                             <td class="px-4 py-4 text-right">
                                 <div class="inline-flex gap-2 items-center">

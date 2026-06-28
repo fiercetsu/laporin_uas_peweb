@@ -165,6 +165,13 @@ $toneMap = [
                                         <option value="">Pilih petugas</option>
                                         <?php foreach ($petugas as $p): ?><option value="<?= e((string)$p['id']) ?>"><?= e((string)$p['nama_lengkap']) ?></option><?php endforeach; ?>
                                     </select>
+                                    <select class="rounded border-[#BDBDBD] text-sm" name="tingkat_prioritas">
+                                        <option value="">Prioritas (opsional)</option>
+                                        <option value="rendah" <?= $row['tingkat_prioritas'] === 'rendah' ? 'selected' : '' ?>>Rendah</option>
+                                        <option value="sedang" <?= $row['tingkat_prioritas'] === 'sedang' ? 'selected' : '' ?>>Sedang</option>
+                                        <option value="tinggi" <?= $row['tingkat_prioritas'] === 'tinggi' ? 'selected' : '' ?>>Tinggi</option>
+                                        <option value="darurat" <?= $row['tingkat_prioritas'] === 'darurat' ? 'selected' : '' ?>>🔴 Darurat</option>
+                                    </select>
                                     <input class="rounded border-[#BDBDBD] text-sm" name="tanggal_target_selesai" type="date">
                                     <input class="rounded border-[#BDBDBD] text-sm" name="catatan_rt" placeholder="Catatan opsional">
                                     <button class="bg-[#00409c] text-white rounded px-3 py-2 text-sm font-semibold" type="submit">Tugaskan</button>
@@ -196,6 +203,13 @@ $toneMap = [
                                 <form class="grid grid-cols-1 gap-2 min-w-[260px]" method="post" action="<?= e(urlFor('/rt-monitoring')) ?>">
                                     <input type="hidden" name="csrf_token" value="<?= $csrf ?>"><input type="hidden" name="laporan_id" value="<?= e((string)$row['id']) ?>"><input type="hidden" name="action" value="assign">
                                     <select class="rounded border-[#BDBDBD] text-sm" name="petugas_id" required><option value="">Pilih petugas baru</option><?php foreach ($petugas as $p): ?><option value="<?= e((string)$p['id']) ?>"><?= e((string)$p['nama_lengkap']) ?></option><?php endforeach; ?></select>
+                                    <select class="rounded border-[#BDBDBD] text-sm" name="tingkat_prioritas">
+                                        <option value="">Prioritas (opsional)</option>
+                                        <option value="rendah" <?= $row['tingkat_prioritas'] === 'rendah' ? 'selected' : '' ?>>Rendah</option>
+                                        <option value="sedang" <?= $row['tingkat_prioritas'] === 'sedang' ? 'selected' : '' ?>>Sedang</option>
+                                        <option value="tinggi" <?= $row['tingkat_prioritas'] === 'tinggi' ? 'selected' : '' ?>>Tinggi</option>
+                                        <option value="darurat" <?= $row['tingkat_prioritas'] === 'darurat' ? 'selected' : '' ?>>🔴 Darurat</option>
+                                    </select>
                                     <input class="rounded border-[#BDBDBD] text-sm" name="tanggal_target_selesai" type="date"><input class="rounded border-[#BDBDBD] text-sm" name="catatan_rt" placeholder="Catatan pengalihan opsional">
                                     <button class="bg-white text-[#00409c] border border-[#00409c] rounded px-3 py-2 text-sm font-semibold" type="submit">Alihkan Tugas</button>
                                 </form>

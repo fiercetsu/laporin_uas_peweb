@@ -19,6 +19,8 @@ function processPetugasTaskForm(): array
         }
 
         $note = trim((string)($_POST['catatan_petugas'] ?? ''));
+        $prioritas = trim((string)($_POST['tingkat_prioritas'] ?? ''));
+        $validPrioritas = in_array($prioritas, ['rendah', 'sedang', 'tinggi', 'darurat'], true);
 
         if ($action === 'mulai') {
             if (!in_array($task['status'], ['diverifikasi', 'ditugaskan', 'perlu_tindak_lanjut'], true)) {
@@ -38,7 +40,8 @@ function processPetugasTaskForm(): array
         }
 
         if ($action === 'progress') {
-            $db->query("UPDATE laporan_kerusakan SET status = 'dalam_pengerjaan', catatan_petugas = ?, updated_at = NOW() WHERE id = ?", [$note, $taskId]);
+            $prioSet = $validPrioritas ? ", tingkat_prioritas = '$prioritas'" : '';
+            $db->query("UPDATE laporan_kerusakan SET status = 'dalam_pengerjaan', catatan_petugas = ?, updated_at = NOW(){$prioSet} WHERE id = ?", [$note, $taskId]);
             $db->query(
                 "INSERT INTO respons_laporan (laporan_id, direspons_oleh, isi_respons, tipe_respons, is_internal) VALUES (?, ?, ?, 'update_status', 0)",
                 [$taskId, (int)$petugas['id'], $note]
@@ -51,12 +54,14 @@ function processPetugasTaskForm(): array
         }
 
         if ($action === 'tindak_lanjut') {
-            $db->query("UPDATE laporan_kerusakan SET status = 'perlu_tindak_lanjut', catatan_petugas = ?, updated_at = NOW() WHERE id = ?", [$note, $taskId]);
+            $prioSet = $validPrioritas ? ", tingkat_prioritas = '$prioritas'" : '';
+            $db->query("UPDATE laporan_kerusakan SET status = 'perlu_tindak_lanjut', catatan_petugas = ?, updated_at = NOW(){$prioSet} WHERE id = ?", [$note, $taskId]);
             insertTaskHistory($db, $taskId, (int)$petugas['id'], $task['status'], 'perlu_tindak_lanjut', $note);
             return [[], 'Tugas ditandai perlu tindak lanjut.'];
         }
 
-        $db->query("UPDATE laporan_kerusakan SET status = 'selesai', catatan_petugas = ?, tanggal_selesai = NOW(), updated_at = NOW() WHERE id = ?", [$note, $taskId]);
+        $prioSet = $validPrioritas ? ", tingkat_prioritas = '$prioritas'" : '';
+        $db->query("UPDATE laporan_kerusakan SET status = 'selesai', catatan_petugas = ?, tanggal_selesai = NOW(), updated_at = NOW(){$prioSet} WHERE id = ?", [$note, $taskId]);
         $db->query("INSERT INTO respons_laporan (laporan_id, direspons_oleh, isi_respons, tipe_respons) VALUES (?, ?, ?, 'penyelesaian')", [$taskId, (int)$petugas['id'], $note]);
         insertTaskHistory($db, $taskId, (int)$petugas['id'], $task['status'], 'selesai', $note);
         savePetugasTaskPhotos($db, $taskId, (int)$petugas['id'], 'bukti_selesai', $_FILES);

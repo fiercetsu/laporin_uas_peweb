@@ -90,18 +90,9 @@ declare(strict_types=1);
                             <span class="mb-1 block text-sm font-semibold">Deskripsi</span>
                             <textarea class="w-full rounded-lg border-[#c8ced8]" id="deskripsi" name="deskripsi" rows="4" required><?= old('deskripsi', (string)$report['deskripsi']) ?></textarea>
                         </label>
-                        <label class="lg:col-span-8">
+                        <label class="lg:col-span-12">
                             <span class="mb-1 block text-sm font-semibold">Lokasi Detail</span>
                             <input class="w-full rounded-lg border-[#c8ced8]" id="lokasi_detail" name="lokasi_detail" value="<?= old('lokasi_detail', (string)$report['lokasi_detail']) ?>" maxlength="255" required>
-                        </label>
-                        <label class="lg:col-span-4">
-                            <span class="mb-1 block text-sm font-semibold">Prioritas</span>
-                            <select class="w-full rounded-lg border-[#c8ced8]" id="tingkat_prioritas" name="tingkat_prioritas">
-                                <option value="rendah" <?= selected('tingkat_prioritas', 'rendah', (string)$report['tingkat_prioritas']) ?>>Rendah</option>
-                                <option value="sedang" <?= selected('tingkat_prioritas', 'sedang', (string)$report['tingkat_prioritas']) ?>>Sedang</option>
-                                <option value="tinggi" <?= selected('tingkat_prioritas', 'tinggi', (string)$report['tingkat_prioritas']) ?>>Tinggi</option>
-                                <option value="darurat" <?= selected('tingkat_prioritas', 'darurat', (string)$report['tingkat_prioritas']) ?>>Darurat</option>
-                            </select>
                         </label>
                         <label class="lg:col-span-8">
                             <span class="mb-1 block text-sm font-semibold">Link Google Maps</span>

@@ -46,6 +46,12 @@ function processRtMonitoringForm(): array
             $params[] = $targetDate;
         }
 
+        $prioritas = trim((string)($_POST['tingkat_prioritas'] ?? ''));
+        if (in_array($prioritas, ['rendah', 'sedang', 'tinggi', 'darurat'], true)) {
+            $sets[] = 'tingkat_prioritas = ?';
+            $params[] = $prioritas;
+        }
+
         $sets[] = 'catatan_admin = ?';
         $params[] = $note;
 

@@ -236,18 +236,9 @@ function renderCreateReportModal(array $categories, string $action, string $csrf
                         <span class="text-sm font-semibold">Deskripsi</span>
                         <textarea class="rounded-lg border-[#BDBDBD]" name="deskripsi" rows="4" placeholder="Jelaskan kerusakan dan kondisi sekitar lokasi." required><?= old('deskripsi') ?></textarea>
                     </label>
-                    <label class="grid gap-1 md:col-span-8">
+                    <label class="grid gap-1 md:col-span-12">
                         <span class="text-sm font-semibold">Lokasi Detail</span>
                         <input class="rounded-lg border-[#BDBDBD]" name="lokasi_detail" value="<?= old('lokasi_detail') ?>" maxlength="255" placeholder="Contoh: Jl. Melati RT 01 dekat mushola" required>
-                    </label>
-                    <label class="grid gap-1 md:col-span-4">
-                        <span class="text-sm font-semibold">Prioritas</span>
-                        <select class="rounded-lg border-[#BDBDBD]" name="tingkat_prioritas">
-                            <option value="rendah" <?= selected('tingkat_prioritas', 'rendah', 'sedang') ?>>Rendah</option>
-                            <option value="sedang" <?= selected('tingkat_prioritas', 'sedang', 'sedang') ?>>Sedang</option>
-                            <option value="tinggi" <?= selected('tingkat_prioritas', 'tinggi', 'sedang') ?>>Tinggi</option>
-                            <option value="darurat" <?= selected('tingkat_prioritas', 'darurat', 'sedang') ?>>Darurat</option>
-                        </select>
                     </label>
                     <label class="grid gap-1 md:col-span-8">
                         <span class="text-sm font-semibold">Link Google Maps</span>

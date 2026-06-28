@@ -79,10 +79,12 @@ function getAdminReports(): array
     try {
         return \App\Db\Database::getInstance()
             ->query(
-                "SELECT id, kode_laporan, judul, nama_pelapor, hp_pelapor, nama_kategori, label_status, status,
-                        tingkat_prioritas, lokasi_detail, nama_petugas, created_at, alasan_penolakan
-                 FROM v_laporan_ringkasan
-                 ORDER BY FIELD(status, 'menunggu_verifikasi', 'diverifikasi', 'ditugaskan', 'dalam_pengerjaan', 'perlu_tindak_lanjut', 'selesai', 'ditolak', 'dibatalkan'), created_at DESC
+                "SELECT v.id, v.kode_laporan, v.judul, lk.deskripsi,
+                        v.nama_pelapor, v.hp_pelapor, v.nama_kategori, v.label_status, v.status,
+                        v.tingkat_prioritas, v.lokasi_detail, v.nama_petugas, v.created_at, v.alasan_penolakan
+                 FROM v_laporan_ringkasan v
+                 LEFT JOIN laporan_kerusakan lk ON lk.id = v.id
+                 ORDER BY FIELD(v.status, 'menunggu_verifikasi', 'diverifikasi', 'ditugaskan', 'dalam_pengerjaan', 'perlu_tindak_lanjut', 'selesai', 'ditolak', 'dibatalkan'), v.created_at DESC
                  LIMIT 100"
             )
             ->fetchAll() ?: [];
@@ -233,12 +235,15 @@ function getPetugasActiveTasks(int $petugasId): array
     try {
         return \App\Db\Database::getInstance()
             ->query(
-                "SELECT id, kode_laporan, judul, nama_pelapor, hp_pelapor, nama_kategori, label_status, status,
-                        tingkat_prioritas, lokasi_detail, latitude, longitude, created_at, tanggal_target_selesai, catatan_petugas
-                 FROM v_laporan_ringkasan
-                 WHERE kode_petugas = (SELECT kode_user FROM users WHERE id = ?)
-                   AND status IN ('diverifikasi','ditugaskan','dalam_pengerjaan','perlu_tindak_lanjut')
-                 ORDER BY tingkat_prioritas DESC, created_at ASC",
+                "SELECT v.id, v.kode_laporan, v.judul, lk.deskripsi,
+                        v.nama_pelapor, v.hp_pelapor, v.nama_kategori, v.label_status, v.status,
+                        v.tingkat_prioritas, v.lokasi_detail, v.latitude, v.longitude,
+                        v.created_at, v.tanggal_target_selesai, v.catatan_petugas
+                 FROM v_laporan_ringkasan v
+                 LEFT JOIN laporan_kerusakan lk ON lk.id = v.id
+                 WHERE v.kode_petugas = (SELECT kode_user FROM users WHERE id = ?)
+                   AND v.status IN ('diverifikasi','ditugaskan','dalam_pengerjaan','perlu_tindak_lanjut')
+                 ORDER BY v.tingkat_prioritas DESC, v.created_at ASC",
                 [$petugasId]
             )
             ->fetchAll() ?: [];

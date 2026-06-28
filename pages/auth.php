@@ -108,27 +108,63 @@ function handleWebAuthPage(): void
                 [$errors, $success] = processResetPasswordForm();
             } elseif ($path === '/laporan') {
                 [$errors, $success] = processLaporanForm();
+                // PRG: redirect after POST
+                $_SESSION['flash'] = ['errors' => $errors, 'success' => $success];
+                if ($errors !== []) {
+                    redirectTo('/laporan');
+                } else {
+                    redirectTo('/dashboard');
+                }
             } elseif ($path === '/edit-laporan') {
                 [$errors, $success] = processEditLaporanForm();
+                // PRG: redirect after POST
+                $reportId = (int)($_POST['id'] ?? $_GET['id'] ?? 0);
+                $_SESSION['flash'] = ['errors' => $errors, 'success' => $success];
+                if ($errors !== []) {
+                    redirectTo('/edit-laporan?id=' . $reportId);
+                } else {
+                    redirectTo('/laporan-saya');
+                }
             } elseif ($path === '/hapus-laporan') {
                 processDeleteLaporanForm();
             } elseif ($path === '/admin-users') {
                 [$errors, $success] = processAdminUserForm();
+                $_SESSION['flash'] = ['errors' => $errors, 'success' => $success];
+                redirectTo('/admin-users');
             } elseif ($path === '/admin-laporan') {
                 [$errors, $success] = processAdminLaporanForm();
+                $_SESSION['flash'] = ['errors' => $errors, 'success' => $success];
+                redirectTo('/admin-laporan');
             } elseif ($path === '/rt-monitoring') {
                 [$errors, $success] = processRtMonitoringForm();
+                $_SESSION['flash'] = ['errors' => $errors, 'success' => $success];
+                redirectTo('/rt-monitoring');
             } elseif ($path === '/petugas-tugas') {
                 [$errors, $success] = processPetugasTaskForm();
+                $_SESSION['flash'] = ['errors' => $errors, 'success' => $success];
+                redirectTo('/petugas-tugas');
             } elseif ($path === '/profil') {
                 [$errors, $success] = processProfileForm();
+                $_SESSION['flash'] = ['errors' => $errors, 'success' => $success];
+                redirectTo('/profil');
             }
         }
     } catch (Throwable $e) {
         $errors = ['Gagal memproses permintaan: ' . $e->getMessage()];
+        // On unhandled exception during POST, store in flash and redirect back
+        if ($method === 'POST' && !in_array($path, ['/', '/login', '/register', '/reset-password'], true)) {
+            $_SESSION['flash'] = ['errors' => $errors, 'success' => ''];
+            redirectTo($path);
+        }
     }
 
-
+    // On GET: read flash data from session
+    if ($method === 'GET') {
+        $flash = $_SESSION['flash'] ?? [];
+        unset($_SESSION['flash']);
+        $errors = $flash['errors'] ?? [];
+        $success = $flash['success'] ?? '';
+    }
 
     if ($path === '/logout') {
         if (!empty($_SESSION['auth_user'])) {
@@ -165,7 +201,7 @@ function handleWebAuthPage(): void
     } elseif ($path === '/laporan') {
         renderLaporanPage($errors, $success);
     } elseif ($path === '/laporan-saya') {
-        renderLaporanSayaPage();
+        renderLaporanSayaPage($errors, $success);
     } elseif ($path === '/edit-laporan') {
         renderEditLaporanPage($errors, $success);
     } elseif ($path === '/admin-users') {

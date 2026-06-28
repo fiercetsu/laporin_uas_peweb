@@ -17,7 +17,7 @@ function processLaporanForm(): array
         'longitude' => trim((string)($_POST['longitude'] ?? '')),
         'akurasi_gps_meter' => trim((string)($_POST['akurasi_gps_meter'] ?? '')),
         'maps_url' => trim((string)($_POST['maps_url'] ?? '')),
-        'tingkat_prioritas' => trim((string)($_POST['tingkat_prioritas'] ?? 'sedang')),
+        'tingkat_prioritas' => 'sedang', // Prioritas hanya bisa diubah oleh petugas/RT/admin
     ];
 
     $errors = validateLaporanInput($input);
@@ -102,7 +102,7 @@ function processEditLaporanForm(): array
         'longitude' => trim((string)($_POST['longitude'] ?? '')),
         'akurasi_gps_meter' => trim((string)($_POST['akurasi_gps_meter'] ?? '')),
         'maps_url' => trim((string)($_POST['maps_url'] ?? '')),
-        'tingkat_prioritas' => trim((string)($_POST['tingkat_prioritas'] ?? 'sedang')),
+        'tingkat_prioritas' => 'sedang', // Diabaikan — prioritas tidak bisa diubah oleh warga
     ];
 
     $errors = validateLaporanInput($input);
@@ -130,7 +130,7 @@ function processEditLaporanForm(): array
             nullableInput($input['longitude']),
             nullableInput($input['akurasi_gps_meter']),
             nullableInput($input['maps_url']),
-            $input['tingkat_prioritas'] !== '' ? $input['tingkat_prioritas'] : 'sedang',
+            $existing['tingkat_prioritas'], // Warga tidak bisa mengubah prioritas
         ];
         if ($wasDitolak) {
             $params[] = 'menunggu_verifikasi';
