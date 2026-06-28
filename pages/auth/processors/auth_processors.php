@@ -107,11 +107,18 @@ function processRegisterForm(): array
         }
 
         $db->beginTransaction();
+        // Ensure counter_warga exists
+        $db->query("INSERT INTO konfigurasi (kunci, nilai) VALUES ('counter_warga', '0') ON DUPLICATE KEY UPDATE kunci=kunci");
+
+        $codeGen = new \App\Utils\CodeGenerator();
+        $kode = $codeGen->wargaCode();
+
         $hash = password_hash($input['password'], PASSWORD_BCRYPT, ['cost' => (int)($_ENV['BCRYPT_COST'] ?? 10)]);
         $db->query(
-            "INSERT INTO users (nik, nama_lengkap, email, no_hp, password_hash, role, status_akun)
-             VALUES (?, ?, ?, ?, ?, 'warga', 'pending')",
+            "INSERT INTO users (kode_user, nik, nama_lengkap, email, no_hp, password_hash, role, status_akun)
+             VALUES (?, ?, ?, ?, ?, ?, 'warga', 'pending')",
             [
+                $kode,
                 $input['nik'],
                 $input['nama_lengkap'],
                 $input['email'] !== '' ? $input['email'] : null,

@@ -5,11 +5,14 @@ function processAdminUserForm(): array
 {
     $action = (string)($_POST['action'] ?? 'status');
 
-    return match ($action) {
-        'create_user' => processAdminCreateUserForm(),
-        'delete_user' => processAdminDeleteUserForm(),
-        default => processAdminUserStatusForm(),
-    };
+    switch ($action) {
+        case 'create_user':
+            return processAdminCreateUserForm();
+        case 'delete_user':
+            return processAdminDeleteUserForm();
+        default:
+            return processAdminUserStatusForm();
+    }
 }
 
 function processAdminUserStatusForm(): array
@@ -17,29 +20,59 @@ function processAdminUserStatusForm(): array
     $admin = requireAdminWeb();
     $userId = (int)($_POST['user_id'] ?? 0);
     $status = (string)($_POST['status_akun'] ?? '');
+    $role = (string)($_POST['role'] ?? '');
 
-    if ($userId < 1 || !in_array($status, ['aktif', 'nonaktif', 'pending'], true)) {
-        return [['Data status user tidak valid.'], ''];
+    if ($userId < 1) {
+        return [['User tidak valid.'], ''];
     }
 
     if ($userId === (int)$admin['id']) {
-        return [['Tidak bisa mengubah status akun sendiri.'], ''];
+        return [['Tidak bisa mengubah status atau role akun sendiri.'], ''];
     }
 
     try {
         $db = \App\Db\Database::getInstance();
-        $target = $db->query("SELECT id, role FROM users WHERE id = ? LIMIT 1", [$userId])->fetch();
+        $target = $db->query("SELECT id, role, kode_user FROM users WHERE id = ? LIMIT 1", [$userId])->fetch();
         if (!$target) {
             return [['User tidak ditemukan.'], ''];
         }
 
-        $db->query("UPDATE users SET status_akun = ?, updated_at = NOW() WHERE id = ?", [$status, $userId]);
-        if ($status !== 'aktif') {
-            $db->query("UPDATE user_sessions SET is_active = 0 WHERE user_id = ?", [$userId]);
+        // Initialize counters
+        $db->query("INSERT INTO konfigurasi (kunci, nilai) VALUES ('counter_rt', '0') ON DUPLICATE KEY UPDATE kunci=kunci");
+        $db->query("INSERT INTO konfigurasi (kunci, nilai) VALUES ('counter_warga', '0') ON DUPLICATE KEY UPDATE kunci=kunci");
+
+        $db->beginTransaction();
+
+        if ($status !== '' && in_array($status, ['aktif', 'nonaktif', 'pending'], true)) {
+            $db->query("UPDATE users SET status_akun = ? WHERE id = ?", [$status, $userId]);
+            if ($status !== 'aktif') {
+                $db->query("UPDATE user_sessions SET is_active = 0 WHERE user_id = ?", [$userId]);
+            }
         }
 
-        return [[], 'Status user berhasil diperbarui.'];
+        if ($role !== '' && in_array($role, ['warga', 'admin', 'petugas', 'rt'], true) && $role !== $target['role']) {
+            $kode = $target['kode_user'];
+            $codeGen = new \App\Utils\CodeGenerator();
+            if ($role === 'warga' && ($kode === null || strpos((string)$kode, 'WRG-') !== 0)) {
+                $kode = $codeGen->wargaCode();
+            } elseif ($role === 'petugas' && ($kode === null || strpos((string)$kode, 'PTG-') !== 0)) {
+                $kode = $codeGen->petugasCode();
+            } elseif ($role === 'admin' && ($kode === null || strpos((string)$kode, 'DRT-') !== 0)) {
+                $kode = $codeGen->adminCode();
+            } elseif ($role === 'rt' && ($kode === null || strpos((string)$kode, 'RT-') !== 0)) {
+                $kode = $codeGen->rtCode();
+            }
+            $db->query("UPDATE users SET role = ?, kode_user = ? WHERE id = ?", [$role, $kode, $userId]);
+        }
+
+        $db->query("UPDATE users SET updated_at = NOW() WHERE id = ?", [$userId]);
+        $db->commit();
+
+        return [[], 'Data user berhasil diperbarui.'];
     } catch (Throwable $e) {
+        if (isset($db) && $db->pdo()->inTransaction()) {
+            $db->rollback();
+        }
         return [['Terjadi kesalahan: ' . $e->getMessage()], ''];
     }
 }
@@ -95,13 +128,15 @@ function processAdminCreateUserForm(): array
         }
 
         $code = null;
-        if ($role === 'petugas') {
-            $code = (new \App\Utils\CodeGenerator())->petugasCode();
+        $codeGen = new \App\Utils\CodeGenerator();
+        if ($role === 'warga') {
+            $code = $codeGen->wargaCode();
+        } elseif ($role === 'petugas') {
+            $code = $codeGen->petugasCode();
         } elseif ($role === 'admin') {
-            $code = (new \App\Utils\CodeGenerator())->adminCode();
+            $code = $codeGen->adminCode();
         } elseif ($role === 'rt') {
-            $nextRt = ((int)$db->query("SELECT COALESCE(MAX(CAST(SUBSTRING(kode_user, 4) AS UNSIGNED)), 0) + 1 FROM users WHERE role = 'rt' AND kode_user LIKE 'RT-%'")->fetchColumn());
-            $code = 'RT-' . str_pad((string)$nextRt, 3, '0', STR_PAD_LEFT);
+            $code = $codeGen->rtCode();
         }
 
         $db->beginTransaction();

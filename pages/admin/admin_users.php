@@ -94,14 +94,20 @@ declare(strict_types=1);
                                     <input type="hidden" name="csrf_token" value="<?= $csrf ?>">
                                     <input type="hidden" name="action" value="status">
                                     <input type="hidden" name="user_id" value="<?= e((string)$row['id']) ?>">
-                                    <select class="w-32 rounded-lg border-[#c8ced8] text-sm" name="status_akun">
+                                    <select class="w-24 rounded-lg border-[#c8ced8] text-xs py-1 px-2" name="role" required>
+                                        <option value="warga" <?= $row['role'] === 'warga' ? 'selected' : '' ?>>warga</option>
+                                        <option value="admin" <?= $row['role'] === 'admin' ? 'selected' : '' ?>>admin</option>
+                                        <option value="petugas" <?= $row['role'] === 'petugas' ? 'selected' : '' ?>>petugas</option>
+                                        <option value="rt" <?= $row['role'] === 'rt' ? 'selected' : '' ?>>rt</option>
+                                    </select>
+                                    <select class="w-24 rounded-lg border-[#c8ced8] text-xs py-1 px-2" name="status_akun" required>
                                         <option value="aktif" <?= $row['status_akun'] === 'aktif' ? 'selected' : '' ?>>aktif</option>
                                         <option value="pending" <?= $row['status_akun'] === 'pending' ? 'selected' : '' ?>>pending</option>
                                         <option value="nonaktif" <?= $row['status_akun'] === 'nonaktif' ? 'selected' : '' ?>>nonaktif</option>
                                     </select>
-                                    <button class="rounded-lg bg-[#00409c] px-3 py-2 font-semibold text-white hover:bg-[#0056cc]" type="submit">Simpan</button>
+                                    <button class="rounded-lg bg-[#00409c] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#0056cc]" type="submit">Simpan</button>
                                 </form>
-                                <form method="post" action="<?= e(urlFor('/admin-users')) ?>" onsubmit="return confirm('Hapus user <?= e((string)$row['nama_lengkap']) ?>? Data yang sudah terkait laporan tidak akan bisa dihapus.');">
+                                <form method="post" action="<?= e(urlFor('/admin-users')) ?>" onsubmit="return confirm('apakah user mau dihapus?');">
                                     <input type="hidden" name="csrf_token" value="<?= $csrf ?>">
                                     <input type="hidden" name="action" value="delete_user">
                                     <input type="hidden" name="user_id" value="<?= e((string)$row['id']) ?>">
