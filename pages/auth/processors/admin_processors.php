@@ -179,19 +179,28 @@ function processAdminDeleteUserForm(): array
 
     try {
         $db = \App\Db\Database::getInstance();
-        $target = $db->query("SELECT id, nama_lengkap FROM users WHERE id = ? LIMIT 1", [$userId])->fetch();
+        $target = $db->query("SELECT id, nama_lengkap, status_akun FROM users WHERE id = ? LIMIT 1", [$userId])->fetch();
         if (!$target) {
             return [['User tidak ditemukan.'], ''];
         }
 
         $db->beginTransaction();
         $db->query("UPDATE user_sessions SET is_active = 0 WHERE user_id = ?", [$userId]);
-        $db->query("DELETE FROM users WHERE id = ?", [$userId]);
+
+        if ($target['status_akun'] === 'nonaktif') {
+            $db->query("SET FOREIGN_KEY_CHECKS = 0");
+            $db->query("DELETE FROM users WHERE id = ?", [$userId]);
+            $db->query("DELETE FROM profil_warga WHERE user_id = ?", [$userId]);
+            $db->query("SET FOREIGN_KEY_CHECKS = 1");
+        } else {
+            $db->query("DELETE FROM users WHERE id = ?", [$userId]);
+        }
+
         $db->commit();
 
         return [[], 'User berhasil dihapus.'];
     } catch (Throwable $e) {
-        if (isset($db)) {
+        if (isset($db) && $db->pdo()->inTransaction()) {
             $db->rollback();
         }
         return [['User tidak bisa dihapus karena masih terkait data laporan atau aktivitas lain. Nonaktifkan akun jika data masih harus disimpan.'], ''];
