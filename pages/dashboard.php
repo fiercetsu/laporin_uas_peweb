@@ -102,8 +102,7 @@ if ($role === 'warga' && $secondaryRows !== []) {
                     "borderRadius": {
                         "DEFAULT": "0.125rem",
                         "lg": "0.25rem",
-                        "xl": "0.5rem",
-                        "full": "0.75rem"
+                        "xl": "0.5rem"
                     },
                     "spacing": {
                         "xs": "4px",
@@ -157,7 +156,10 @@ if ($role === 'warga' && $secondaryRows !== []) {
 <!-- TopNavBar (Mobile Only) -->
 <header class="lg:hidden bg-primary text-on-primary flex justify-between items-center w-full px-md h-16 shadow-sm fixed top-0 left-0 z-50">
     <div class="text-title-lg font-title-lg font-bold">Laporin RT</div>
-    <div class="flex items-center gap-4">
+    <div class="flex items-center gap-3">
+        <div class="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white font-bold text-sm uppercase">
+            <?= substr(e((string)$user['nama_lengkap']), 0, 1) ?>
+        </div>
         <form method="post" action="<?= e(urlFor('/logout')) ?>" class="m-0">
             <input type="hidden" name="csrf_token" value="<?= e(csrfToken()) ?>">
             <button class="hover:bg-primary-container/20 p-2 rounded-full transition-colors flex items-center justify-center" type="submit" aria-label="Keluar">
@@ -176,6 +178,15 @@ if ($role === 'warga' && $secondaryRows !== []) {
         <div>
             <h1 class="text-headline-md font-headline-md text-on-surface"><?= e($roleTitles[$role] ?? 'Dashboard') ?></h1>
             <p class="text-body-md font-body-md text-on-surface-variant mt-1"><?= e($roleDescriptions[$role] ?? 'Ringkasan aktivitas akun.') ?></p>
+        </div>
+        <div class="flex items-center gap-3 bg-white border border-[#BDBDBD] rounded-lg p-3 shadow-sm">
+            <div class="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-lg uppercase">
+                <?= substr(e((string)$user['nama_lengkap']), 0, 1) ?>
+            </div>
+            <div class="text-left text-body-md font-body-md text-on-surface-variant">
+                <div class="font-semibold text-on-surface"><?= e((string)$user['nama_lengkap']) ?></div>
+                <div class="text-xs">NIK: <?= e((string)$user['nik']) ?> | ID: <?= e((string)($user['kode_user'] ?? 'Warga')) ?></div>
+            </div>
         </div>
     </div>
 
