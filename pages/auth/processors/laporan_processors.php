@@ -219,7 +219,9 @@ function validateLaporanInput(array $input): array
 
 function saveLaporanPhotos(\App\Db\Database $db, int $laporanId, int $userId, array $files): void
 {
-    throw new \RuntimeException("DEBUG _FILES: " . print_r($files, true));
+    if (empty($files['fotos']['name'])) {
+        return;
+    }
 
     $names = is_array($files['fotos']['name']) ? $files['fotos']['name'] : [$files['fotos']['name']];
     $upload = new \App\Utils\FileUpload();

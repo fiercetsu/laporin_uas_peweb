@@ -129,6 +129,11 @@ final class Database
         return $this->pdo->exec('ROLLBACK TO SAVEPOINT trans' . $this->transactionDepth) !== false;
     }
 
+    public function inTransaction(): bool
+    {
+        return $this->pdo->inTransaction();
+    }
+
     public function lastInsertId(): string
     {
         return $this->pdo->lastInsertId();
