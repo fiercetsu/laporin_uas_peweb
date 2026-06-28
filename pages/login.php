@@ -47,7 +47,7 @@ declare(strict_types=1);
             <i class="bi bi-box-arrow-in-right fs-2"></i>
         </div>
         <h1 class="h3 fw-bold mb-1">Login</h1>
-        <p class="mb-0 text-secondary">Masuk memakai NIK dan password akun kamu.</p>
+        <p class="mb-0 text-secondary">Masuk memakai email dan password akun kamu.</p>
     </header>
     <div class="p-4">
         <?php if ($errors !== []): ?>
@@ -61,12 +61,15 @@ declare(strict_types=1);
         <form id="loginForm" method="post" action="<?= e($action) ?>" novalidate>
             <input type="hidden" name="csrf_token" value="<?= $csrf ?>">
             <div class="mb-3">
-                <label class="form-label fw-bold" for="nik">NIK</label>
-                <input class="form-control" id="nik" name="nik" value="<?= $nik ?>" inputmode="numeric" maxlength="16" pattern="\d{16}" placeholder="Masukkan NIK 16 digit" required>
-                <div class="invalid-feedback">NIK wajib 16 digit angka.</div>
+                <label class="form-label fw-bold" for="email">Email</label>
+                <input class="form-control" id="email" name="email" type="email" value="<?= $email ?>" placeholder="Masukkan email terdaftar" required>
+                <div class="invalid-feedback">Email wajib diisi dengan format yang benar.</div>
             </div>
             <div class="mb-3">
-                <label class="form-label fw-bold" for="password">Password</label>
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <label class="form-label fw-bold mb-0" for="password">Password</label>
+                    <a class="text-decoration-none text-small small" href="<?= e(urlFor('/reset-password')) ?>">Lupa Password?</a>
+                </div>
                 <div class="input-group">
                     <input class="form-control" id="password" name="password" type="password" placeholder="Masukkan password" required>
                     <button class="btn btn-outline-secondary" id="togglePassword" type="button" aria-label="Tampilkan password">

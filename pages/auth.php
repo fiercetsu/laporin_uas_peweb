@@ -1116,7 +1116,7 @@ function getActiveCategories(): array
         return \App\Db\Database::getInstance()
             ->query("SELECT id, nama_kategori, deskripsi FROM kategori_laporan WHERE is_active = 1 ORDER BY nama_kategori")
             ->fetchAll() ?: [];
-    } catch (Throwable) {
+    } catch (Throwable $e) {
         return [];
     }
 }
@@ -1131,7 +1131,7 @@ function getMyReports(int $userId): array
                 [$userId]
             )
             ->fetchAll() ?: [];
-    } catch (Throwable) {
+    } catch (Throwable $e) {
         return [];
     }
 }
@@ -1166,7 +1166,7 @@ function getOwnedReport(int $reportId, int $userId): ?array
             ->fetch();
 
         return $report ?: null;
-    } catch (Throwable) {
+    } catch (Throwable $e) {
         return null;
     }
 }
@@ -1183,7 +1183,7 @@ function getAdminUsers(): array
                  ORDER BY FIELD(u.status_akun, 'pending', 'aktif', 'nonaktif'), u.created_at DESC"
             )
             ->fetchAll() ?: [];
-    } catch (Throwable) {
+    } catch (Throwable $e) {
         return [];
     }
 }
@@ -1200,7 +1200,7 @@ function getAdminReports(): array
                  LIMIT 100"
             )
             ->fetchAll() ?: [];
-    } catch (Throwable) {
+    } catch (Throwable $e) {
         return [];
     }
 }
@@ -1211,7 +1211,7 @@ function getActivePetugas(): array
         return \App\Db\Database::getInstance()
             ->query("SELECT id, kode_user, nama_lengkap FROM users WHERE role = 'petugas' AND status_akun = 'aktif' ORDER BY nama_lengkap")
             ->fetchAll() ?: [];
-    } catch (Throwable) {
+    } catch (Throwable $e) {
         return [];
     }
 }
@@ -1228,7 +1228,7 @@ function getRtEmergencyReports(): array
                  ORDER BY created_at ASC"
             )
             ->fetchAll() ?: [];
-    } catch (Throwable) {
+    } catch (Throwable $e) {
         return [];
     }
 }
@@ -1242,7 +1242,7 @@ function getRtEmergencySummary(): array
             'menunggu' => dashboardCount($db, "SELECT COUNT(*) FROM laporan_kerusakan WHERE tingkat_prioritas = 'darurat' AND status = 'menunggu_verifikasi'"),
             'diproses' => dashboardCount($db, "SELECT COUNT(*) FROM laporan_kerusakan WHERE tingkat_prioritas = 'darurat' AND status IN ('diverifikasi','ditugaskan','dalam_pengerjaan','perlu_tindak_lanjut')"),
         ];
-    } catch (Throwable) {
+    } catch (Throwable $e) {
         return ['total' => 0, 'menunggu' => 0, 'diproses' => 0];
     }
 }
@@ -1253,7 +1253,7 @@ function getRtOfficerMonitoring(): array
         return \App\Db\Database::getInstance()
             ->query("SELECT * FROM v_monitoring_petugas ORDER BY jml_aktif DESC, nama_petugas")
             ->fetchAll() ?: [];
-    } catch (Throwable) {
+    } catch (Throwable $e) {
         return [];
     }
 }
@@ -1270,7 +1270,7 @@ function getRtActiveTasks(): array
                  LIMIT 30"
             )
             ->fetchAll() ?: [];
-    } catch (Throwable) {
+    } catch (Throwable $e) {
         return [];
     }
 }
@@ -1289,7 +1289,7 @@ function getPetugasActiveTasks(int $petugasId): array
                 [$petugasId]
             )
             ->fetchAll() ?: [];
-    } catch (Throwable) {
+    } catch (Throwable $e) {
         return [];
     }
 }
@@ -1309,7 +1309,7 @@ function getPetugasHistoryTasks(int $petugasId): array
                 [$petugasId]
             )
             ->fetchAll() ?: [];
-    } catch (Throwable) {
+    } catch (Throwable $e) {
         return [];
     }
 }
@@ -1487,7 +1487,7 @@ function formatDashboardDate(string $value): string
 
     try {
         return (new DateTime($value))->format('d M Y H:i');
-    } catch (Throwable) {
+    } catch (Throwable $e) {
         return $value;
     }
 }
@@ -1504,7 +1504,7 @@ function getRtBelumDikerjakanTasks(): array
                  ORDER BY tingkat_prioritas DESC, created_at DESC"
             )
             ->fetchAll() ?: [];
-    } catch (Throwable) {
+    } catch (Throwable $e) {
         return [];
     }
 }
@@ -1521,7 +1521,7 @@ function getRtSedangDikerjakanTasks(): array
                  ORDER BY tingkat_prioritas DESC, created_at DESC"
             )
             ->fetchAll() ?: [];
-    } catch (Throwable) {
+    } catch (Throwable $e) {
         return [];
     }
 }
@@ -1538,7 +1538,7 @@ function getRtSelesaiTasks(): array
                  ORDER BY tanggal_selesai DESC, created_at DESC"
             )
             ->fetchAll() ?: [];
-    } catch (Throwable) {
+    } catch (Throwable $e) {
         return [];
     }
 }
@@ -1553,7 +1553,7 @@ function getReportsPhotos(array $reportIds): array
         return \App\Db\Database::getInstance()
             ->query("SELECT id, laporan_id, path_file, tipe_foto, created_at FROM foto_laporan WHERE laporan_id IN ($placeholders) ORDER BY created_at ASC", $reportIds)
             ->fetchAll() ?: [];
-    } catch (Throwable) {
+    } catch (Throwable $e) {
         return [];
     }
 }

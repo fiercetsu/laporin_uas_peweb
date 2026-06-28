@@ -276,7 +276,7 @@ declare(strict_types=1);
                 <div class="section-box mb-3">
                     <div class="section-title">Keamanan akun</div>
                     <div class="row g-3">
-                        <div class="col-md-6">
+                        <div class="col-12">
                             <label class="form-label" for="password">Password</label>
                             <div class="input-group">
                                 <span class="input-group-text"><i class="bi bi-lock"></i></span>
@@ -284,7 +284,7 @@ declare(strict_types=1);
                             </div>
                             <div class="form-text">Gunakan minimal 8 karakter, huruf kapital, dan angka.</div>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-12">
                             <label class="form-label" for="password_confirm">Konfirmasi Password</label>
                             <div class="input-group">
                                 <span class="input-group-text"><i class="bi bi-shield-lock"></i></span>

@@ -6,12 +6,7 @@
     return;
   }
 
-  var nik = document.getElementById("nik");
-  if (nik) {
-    nik.addEventListener("input", function () {
-      nik.value = nik.value.replace(/\D/g, "").slice(0, 16);
-    });
-  }
+
 
   var password = document.getElementById("password");
   var toggle = document.getElementById("togglePassword");
