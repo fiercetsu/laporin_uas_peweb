@@ -9,7 +9,6 @@ require_once __DIR__ . '/auth/processors/admin_processors.php';
 require_once __DIR__ . '/auth/processors/rt_processors.php';
 require_once __DIR__ . '/auth/processors/petugas_processors.php';
 require_once __DIR__ . '/auth/processors/profile_processors.php';
-require_once __DIR__ . '/auth/page_renderers.php';
 
 function isWebAuthPage(): bool
 {
@@ -23,9 +22,9 @@ function isWebAuthPage(): bool
 
     $path = normalizeWebAuthPath($path);
     return in_array($path, [
-        '/', '/login', '/register', '/dashboard', '/logout', '/laporan', 
-        '/laporan-saya', '/edit-laporan', '/hapus-laporan', '/admin-users', 
-        '/admin-laporan', '/rt-darurat', '/rt-monitoring', '/petugas-tugas', 
+        '/', '/login', '/register', '/dashboard', '/logout', '/laporan',
+        '/laporan-saya', '/edit-laporan', '/hapus-laporan', '/admin-users',
+        '/admin-laporan', '/rt-darurat', '/rt-monitoring', '/petugas-tugas',
         '/petugas-riwayat', '/profil', '/laporan-pdf', '/reset-password', '/session-ping'
     ], true);
 }
@@ -90,80 +89,17 @@ function handleWebAuthPage(): void
         return;
     }
 
-    $errors = [];
-    $success = '';
-    if ($path === '/login' && $method === 'POST') {
-        unset($_SESSION['session_error']);
-    }
-
-    try {
+    // Hapus laporan — POST-only, tidak punya halaman sendiri
+    if ($path === '/hapus-laporan') {
         if ($method === 'POST') {
-            verifyCsrfToken();
-
-            if ($path === '/login') {
-                [$errors, $success] = processLoginForm();
-            } elseif ($path === '/register') {
-                [$errors, $success] = processRegisterForm();
-            } elseif ($path === '/reset-password') {
-                [$errors, $success] = processResetPasswordForm();
-            } elseif ($path === '/laporan') {
-                [$errors, $success] = processLaporanForm();
-                // PRG: redirect after POST
-                $_SESSION['flash'] = ['errors' => $errors, 'success' => $success];
-                if ($errors !== []) {
-                    redirectTo('/laporan');
-                } else {
-                    redirectTo('/dashboard');
-                }
-            } elseif ($path === '/edit-laporan') {
-                [$errors, $success] = processEditLaporanForm();
-                // PRG: redirect after POST
-                $reportId = (int)($_POST['id'] ?? $_GET['id'] ?? 0);
-                $_SESSION['flash'] = ['errors' => $errors, 'success' => $success];
-                if ($errors !== []) {
-                    redirectTo('/edit-laporan?id=' . $reportId);
-                } else {
-                    redirectTo('/laporan-saya');
-                }
-            } elseif ($path === '/hapus-laporan') {
+            try {
+                verifyCsrfToken();
                 processDeleteLaporanForm();
-            } elseif ($path === '/admin-users') {
-                [$errors, $success] = processAdminUserForm();
-                $_SESSION['flash'] = ['errors' => $errors, 'success' => $success];
-                redirectTo('/admin-users');
-            } elseif ($path === '/admin-laporan') {
-                [$errors, $success] = processAdminLaporanForm();
-                $_SESSION['flash'] = ['errors' => $errors, 'success' => $success];
-                redirectTo('/admin-laporan');
-            } elseif ($path === '/rt-monitoring') {
-                [$errors, $success] = processRtMonitoringForm();
-                $_SESSION['flash'] = ['errors' => $errors, 'success' => $success];
-                redirectTo('/rt-monitoring');
-            } elseif ($path === '/petugas-tugas') {
-                [$errors, $success] = processPetugasTaskForm();
-                $_SESSION['flash'] = ['errors' => $errors, 'success' => $success];
-                redirectTo('/petugas-tugas');
-            } elseif ($path === '/profil') {
-                [$errors, $success] = processProfileForm();
-                $_SESSION['flash'] = ['errors' => $errors, 'success' => $success];
-                redirectTo('/profil');
+            } catch (Throwable $e) {
+                $_SESSION['flash'] = ['errors' => ['Gagal menghapus laporan: ' . $e->getMessage()], 'success' => ''];
             }
         }
-    } catch (Throwable $e) {
-        $errors = ['Gagal memproses permintaan: ' . $e->getMessage()];
-        // On unhandled exception during POST, store in flash and redirect back
-        if ($method === 'POST' && !in_array($path, ['/', '/login', '/register', '/reset-password'], true)) {
-            $_SESSION['flash'] = ['errors' => $errors, 'success' => ''];
-            redirectTo($path);
-        }
-    }
-
-    // On GET: read flash data from session
-    if ($method === 'GET') {
-        $flash = $_SESSION['flash'] ?? [];
-        unset($_SESSION['flash']);
-        $errors = $flash['errors'] ?? [];
-        $success = $flash['success'] ?? '';
+        redirectTo('/laporan-saya');
     }
 
     if ($path === '/logout') {
@@ -178,48 +114,46 @@ function handleWebAuthPage(): void
         redirectTo('/login');
     }
 
+    // Redirect logged-in users dari halaman publik
+    if (in_array($path, ['/', '/login', '/register', '/reset-password'], true) && !empty($_SESSION['auth_user'])) {
+        redirectTo('/dashboard');
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // Page Script dispatch — setiap halaman handle POST + render sendiri
+    // ═══════════════════════════════════════════════════════════════════
+    header('Content-Type: text/html; charset=UTF-8');
+
     if ($path === '/' || $path === '/login') {
-        if (!empty($_SESSION['auth_user'])) {
-            redirectTo('/dashboard');
-        }
-        if (!empty($_SESSION['session_error'])) {
-            unset($_SESSION['session_error']);
-        }
-        renderAuthPage('login', $errors, $success);
+        require __DIR__ . '/login.php';
     } elseif ($path === '/register') {
-        if (!empty($_SESSION['auth_user'])) {
-            redirectTo('/dashboard');
-        }
-        renderAuthPage('register', $errors, $success);
+        require __DIR__ . '/register.php';
     } elseif ($path === '/reset-password') {
-        if (!empty($_SESSION['auth_user'])) {
-            redirectTo('/dashboard');
-        }
-        renderResetPasswordPage($errors, $success);
+        require __DIR__ . '/reset_password.php';
     } elseif ($path === '/dashboard') {
-        renderDashboardPage();
+        require __DIR__ . '/dashboard.php';
     } elseif ($path === '/laporan') {
-        renderLaporanPage($errors, $success);
+        require __DIR__ . '/laporan.php';
     } elseif ($path === '/laporan-saya') {
-        renderLaporanSayaPage($errors, $success);
+        require __DIR__ . '/users/laporan_saya.php';
     } elseif ($path === '/edit-laporan') {
-        renderEditLaporanPage($errors, $success);
+        require __DIR__ . '/users/laporan_edit.php';
     } elseif ($path === '/admin-users') {
-        renderAdminUsersPage($errors, $success);
+        require __DIR__ . '/admin/admin_users.php';
     } elseif ($path === '/admin-laporan') {
-        renderAdminLaporanPage($errors, $success);
+        require __DIR__ . '/admin/admin_laporan.php';
     } elseif ($path === '/rt-darurat') {
-        renderRtDaruratPage();
+        require __DIR__ . '/rt/rt_darurat.php';
     } elseif ($path === '/rt-monitoring') {
-        renderRtMonitoringPage($errors, $success);
+        require __DIR__ . '/rt/rt_monitoring.php';
     } elseif ($path === '/petugas-tugas') {
-        renderPetugasTugasPage($errors, $success);
+        require __DIR__ . '/petugas/petugas_tugas.php';
     } elseif ($path === '/petugas-riwayat') {
-        renderPetugasRiwayatPage();
+        require __DIR__ . '/petugas/petugas_riwayat.php';
     } elseif ($path === '/profil') {
-        renderProfilePage($errors, $success);
+        require __DIR__ . '/profile.php';
     } elseif ($path === '/laporan-pdf') {
-        renderLaporanPdfPage();
+        require __DIR__ . '/laporan_pdf.php';
     }
 }
 

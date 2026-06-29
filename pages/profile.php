@@ -1,6 +1,35 @@
 <?php
 declare(strict_types=1);
 
+// ── Auth Guard ──────────────────────────────────────────────────────
+if (empty($_SESSION['auth_user'])) {
+    redirectTo('/login');
+}
+
+// ── Handle POST (PRG) ───────────────────────────────────────────────
+if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
+    try {
+        verifyCsrfToken();
+        [$errors, $success] = processProfileForm();
+    } catch (Throwable $e) {
+        $errors = ['Gagal memproses: ' . $e->getMessage()];
+        $success = '';
+    }
+    $_SESSION['flash'] = ['errors' => $errors, 'success' => $success];
+    redirectTo('/profil');
+}
+
+// ── Read flash ──────────────────────────────────────────────────────
+$flash = $_SESSION['flash'] ?? [];
+unset($_SESSION['flash']);
+$errors = $flash['errors'] ?? [];
+$success = $flash['success'] ?? '';
+
+// ── Ambil data untuk tampilan ───────────────────────────────────────
+$user = $_SESSION['auth_user'];
+$profile = getProfileData((int)$user['id']);
+$csrf = e(csrfToken());
+
 $role = (string)($user['role'] ?? 'warga');
 $profile = $profile ?: $user;
 $value = static fn(string $key): string => e((string)($_POST[$key] ?? $profile[$key] ?? ''));

@@ -1,5 +1,11 @@
 <?php
 declare(strict_types=1);
+
+// ── Auth Guard ──────────────────────────────────────────────────────
+$petugas = requirePetugasWeb();
+
+// ── Ambil data untuk tampilan ───────────────────────────────────────
+$tasks = getPetugasHistoryTasks((int)$petugas['id']);
 ?>
 <!doctype html>
 <html lang="id">

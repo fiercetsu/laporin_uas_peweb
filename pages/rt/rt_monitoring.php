@@ -1,6 +1,52 @@
 <?php
 declare(strict_types=1);
 
+// ── Auth Guard ──────────────────────────────────────────────────────
+$rt = requireRtWeb();
+
+// ── Handle POST (PRG) ───────────────────────────────────────────────
+if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
+    try {
+        verifyCsrfToken();
+        [$errors, $success] = processRtMonitoringForm();
+    } catch (Throwable $e) {
+        $errors = ['Gagal memproses: ' . $e->getMessage()];
+        $success = '';
+    }
+    $_SESSION['flash'] = ['errors' => $errors, 'success' => $success];
+    redirectTo('/rt-monitoring');
+}
+
+// ── Read flash ──────────────────────────────────────────────────────
+$flash = $_SESSION['flash'] ?? [];
+unset($_SESSION['flash']);
+$errors = $flash['errors'] ?? [];
+$success = $flash['success'] ?? '';
+
+// ── Ambil data untuk tampilan ───────────────────────────────────────
+$officers = getRtOfficerMonitoring();
+$activeTasks = getRtActiveTasks();
+$belumDikerjakan = getRtBelumDikerjakanTasks();
+$sedangDikerjakan = getRtSedangDikerjakanTasks();
+$selesaiTasks = getRtSelesaiTasks();
+
+$allReportIds = array_merge(
+    array_column($belumDikerjakan, 'id'),
+    array_column($sedangDikerjakan, 'id'),
+    array_column($selesaiTasks, 'id')
+);
+
+$photosByReport = [];
+if ($allReportIds !== []) {
+    $rawPhotos = getReportsPhotos($allReportIds);
+    foreach ($rawPhotos as $p) {
+        $photosByReport[(int)$p['laporan_id']][] = $p;
+    }
+}
+
+$petugas = getActivePetugas();
+$csrf = e(csrfToken());
+
 $user = $rt;
 $formatPhotos = function(array $reportPhotos): array {
     return array_map(static function(array $p): array {

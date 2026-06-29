@@ -1,6 +1,42 @@
 <?php
 declare(strict_types=1);
 
+// ── Auth Guard ──────────────────────────────────────────────────────
+if (empty($_SESSION['auth_user'])) {
+    redirectTo('/login');
+}
+if (($_SESSION['auth_user']['role'] ?? '') !== 'warga') {
+    redirectTo('/dashboard');
+}
+$user = $_SESSION['auth_user'];
+
+// ── Handle POST (PRG) ───────────────────────────────────────────────
+if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
+    try {
+        verifyCsrfToken();
+        [$errors, $success] = processLaporanForm();
+        $_SESSION['flash'] = ['errors' => $errors, 'success' => $success];
+        if ($errors !== []) {
+            redirectTo('/laporan');
+        } else {
+            redirectTo('/dashboard');
+        }
+    } catch (Throwable $e) {
+        $_SESSION['flash'] = ['errors' => ['Gagal memproses: ' . $e->getMessage()], 'success' => ''];
+        redirectTo('/laporan');
+    }
+}
+
+// ── Read flash ──────────────────────────────────────────────────────
+$flash = $_SESSION['flash'] ?? [];
+unset($_SESSION['flash']);
+$errors = $flash['errors'] ?? [];
+$success = $flash['success'] ?? '';
+
+// ── Setup variabel untuk tampilan ───────────────────────────────────
+$categories = getActiveCategories();
+$csrf = e(csrfToken());
+$action = urlFor('/laporan');
 $openModal = $errors !== [] || $success !== '';
 ?>
 <!DOCTYPE html>

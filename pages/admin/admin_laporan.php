@@ -1,4 +1,43 @@
-<?php declare(strict_types=1); ?>
+<?php
+declare(strict_types=1);
+
+// ── Auth Guard ──────────────────────────────────────────────────────
+$admin = requireAdminWeb();
+
+// ── Handle POST (PRG) ───────────────────────────────────────────────
+if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
+    try {
+        verifyCsrfToken();
+        [$errors, $success] = processAdminLaporanForm();
+    } catch (Throwable $e) {
+        $errors = ['Gagal memproses: ' . $e->getMessage()];
+        $success = '';
+    }
+    $_SESSION['flash'] = ['errors' => $errors, 'success' => $success];
+    redirectTo('/admin-laporan');
+}
+
+// ── Read flash ──────────────────────────────────────────────────────
+$flash = $_SESSION['flash'] ?? [];
+unset($_SESSION['flash']);
+$errors = $flash['errors'] ?? [];
+$success = $flash['success'] ?? '';
+
+// ── Ambil data untuk tampilan ───────────────────────────────────────
+$reports = getAdminReports();
+$petugas = getActivePetugas();
+$csrf = e(csrfToken());
+
+$photosByReport = [];
+$ids = array_map(static fn(array $r): int => (int)$r['id'], $reports);
+if ($ids !== []) {
+    foreach (getReportsPhotos($ids) as $photo) {
+        $photosByReport[(int)$photo['laporan_id']][] = [
+            'url' => urlFor('/backend/' . $photo['path_file']),
+        ];
+    }
+}
+?>
 <!doctype html>
 <html lang="id">
 <head>

@@ -1,5 +1,24 @@
 <?php
 declare(strict_types=1);
+
+// ── Handle POST ─────────────────────────────────────────────────────
+$errors = [];
+$success = '';
+
+if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
+    try {
+        verifyCsrfToken();
+        [$errors, $success] = processResetPasswordForm();
+    } catch (Throwable $e) {
+        $errors = ['Gagal memproses reset password: ' . $e->getMessage()];
+    }
+}
+
+// ── Setup variabel untuk tampilan ───────────────────────────────────
+$action = urlFor('/reset-password');
+$csrf = e(csrfToken());
+$email = e((string)($_POST['email'] ?? ''));
+$nik = e((string)($_POST['nik'] ?? ''));
 ?>
 <!doctype html>
 <html lang="id">

@@ -1,6 +1,25 @@
 <?php
 declare(strict_types=1);
 
+// ── Auth Guard ──────────────────────────────────────────────────────
+if (empty($_SESSION['auth_user'])) {
+    redirectTo('/login');
+}
+$user = $_SESSION['auth_user'];
+if (!in_array((string)($user['role'] ?? ''), ['petugas', 'rt'], true)) {
+    redirectTo('/dashboard');
+}
+
+// ── Ambil data untuk tampilan ───────────────────────────────────────
+$reports = getCompletedReportsForPdf($user);
+$photosByReport = [];
+$ids = array_map(static fn(array $row): int => (int)$row['id'], $reports);
+if ($ids !== []) {
+    foreach (getReportsPhotos($ids) as $photo) {
+        $photosByReport[(int)$photo['laporan_id']][] = $photo;
+    }
+}
+
 $role = (string)($user['role'] ?? '');
 $title = $role === 'rt' ? 'Rekap Laporan Selesai RT' : 'Rekap Laporan Selesai Petugas';
 $printedAt = date('d/m/Y H:i');

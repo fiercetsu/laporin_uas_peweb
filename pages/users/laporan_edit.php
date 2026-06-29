@@ -1,5 +1,52 @@
 <?php
 declare(strict_types=1);
+
+// ── Auth Guard ──────────────────────────────────────────────────────
+if (empty($_SESSION['auth_user'])) {
+    redirectTo('/login');
+}
+if (($_SESSION['auth_user']['role'] ?? '') !== 'warga') {
+    redirectTo('/dashboard');
+}
+$user = $_SESSION['auth_user'];
+
+// ── Handle POST (PRG) ───────────────────────────────────────────────
+if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
+    try {
+        verifyCsrfToken();
+        [$errors, $success] = processEditLaporanForm();
+        $reportId = (int)($_POST['id'] ?? $_GET['id'] ?? 0);
+        $_SESSION['flash'] = ['errors' => $errors, 'success' => $success];
+        if ($errors !== []) {
+            redirectTo('/edit-laporan?id=' . $reportId);
+        } else {
+            redirectTo('/laporan-saya');
+        }
+    } catch (Throwable $e) {
+        $_SESSION['flash'] = ['errors' => ['Gagal memproses: ' . $e->getMessage()], 'success' => ''];
+        redirectTo('/edit-laporan?id=' . ((int)($_POST['id'] ?? $_GET['id'] ?? 0)));
+    }
+}
+
+// ── Read flash ──────────────────────────────────────────────────────
+$flash = $_SESSION['flash'] ?? [];
+unset($_SESSION['flash']);
+$errors = $flash['errors'] ?? [];
+$success = $flash['success'] ?? '';
+
+// ── Ambil data laporan ──────────────────────────────────────────────
+$reportId = (int)($_GET['id'] ?? $_POST['id'] ?? 0);
+$report = getOwnedReport($reportId, (int)$user['id']);
+if (!$report) {
+    redirectTo('/laporan-saya');
+}
+if ($report['status'] === 'selesai') {
+    redirectTo('/laporan-saya');
+}
+
+$categories = getActiveCategories();
+$csrf = e(csrfToken());
+$action = urlFor('/edit-laporan') . '?id=' . $reportId;
 ?>
 <!doctype html>
 <html lang="id">

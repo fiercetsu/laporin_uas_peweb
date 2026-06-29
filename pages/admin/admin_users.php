@@ -1,5 +1,32 @@
 <?php
 declare(strict_types=1);
+
+// ── Auth Guard ──────────────────────────────────────────────────────
+$admin = requireAdminWeb();
+
+// ── Handle POST (PRG) ───────────────────────────────────────────────
+if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
+    try {
+        verifyCsrfToken();
+        [$errors, $success] = processAdminUserForm();
+    } catch (Throwable $e) {
+        $errors = ['Gagal memproses: ' . $e->getMessage()];
+        $success = '';
+    }
+    $_SESSION['flash'] = ['errors' => $errors, 'success' => $success];
+    redirectTo('/admin-users');
+}
+
+// ── Read flash ──────────────────────────────────────────────────────
+$flash = $_SESSION['flash'] ?? [];
+unset($_SESSION['flash']);
+$errors = $flash['errors'] ?? [];
+$success = $flash['success'] ?? '';
+$openCreateModal = ($_POST['action'] ?? '') === 'create_user' && $errors !== [];
+
+// ── Ambil data untuk tampilan ───────────────────────────────────────
+$users = getAdminUsers();
+$csrf = e(csrfToken());
 ?>
 <!doctype html>
 <html lang="id">

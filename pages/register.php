@@ -1,5 +1,40 @@
 <?php
 declare(strict_types=1);
+
+// ── Handle POST ─────────────────────────────────────────────────────
+$errors = [];
+$success = '';
+
+if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
+    try {
+        verifyCsrfToken();
+        [$errors, $success] = processRegisterForm();
+    } catch (Throwable $e) {
+        $errors = ['Gagal memproses registrasi: ' . $e->getMessage()];
+    }
+}
+
+// ── Setup variabel untuk tampilan ───────────────────────────────────
+$isRegister = true;
+$title = 'Register Warga';
+$action = urlFor('/register');
+$csrf = e(csrfToken());
+$nik = e((string)($_POST['nik'] ?? ''));
+$nama = e((string)($_POST['nama_lengkap'] ?? ''));
+$email = e((string)($_POST['email'] ?? ''));
+$noHp = e((string)($_POST['no_hp'] ?? ''));
+$noKk = e((string)($_POST['no_kk'] ?? ''));
+$noRt = e((string)($_POST['no_rt'] ?? ''));
+$noRw = e((string)($_POST['no_rw'] ?? ''));
+$alamat = e((string)($_POST['alamat_lengkap'] ?? ''));
+$kelurahan = e((string)($_POST['kelurahan'] ?? ''));
+$kecamatan = e((string)($_POST['kecamatan'] ?? ''));
+$kotaKabupaten = e((string)($_POST['kota_kabupaten'] ?? ''));
+$tempatLahir = e((string)($_POST['tempat_lahir'] ?? ''));
+$tanggalLahir = e((string)($_POST['tanggal_lahir'] ?? ''));
+$agama = e((string)($_POST['agama'] ?? ''));
+$pekerjaan = e((string)($_POST['pekerjaan'] ?? ''));
+$tanggalPindahMasuk = e((string)($_POST['tanggal_pindah_masuk'] ?? ''));
 ?>
 <!doctype html>
 <html lang="id">

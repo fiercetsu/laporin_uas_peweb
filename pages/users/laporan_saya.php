@@ -1,5 +1,26 @@
 <?php
 declare(strict_types=1);
+
+// ── Auth Guard ──────────────────────────────────────────────────────
+if (empty($_SESSION['auth_user'])) {
+    redirectTo('/login');
+}
+if (($_SESSION['auth_user']['role'] ?? '') !== 'warga') {
+    redirectTo('/dashboard');
+}
+
+// ── Read flash ──────────────────────────────────────────────────────
+$flash = $_SESSION['flash'] ?? [];
+unset($_SESSION['flash']);
+$errors = $flash['errors'] ?? [];
+$success = $flash['success'] ?? '';
+
+// ── Setup variabel untuk tampilan ───────────────────────────────────
+$user = $_SESSION['auth_user'];
+$reports = getMyReports((int)$user['id']);
+$categories = getActiveCategories();
+$action = urlFor('/laporan');
+$csrf = e(csrfToken());
 ?>
 <!DOCTYPE html>
 <html lang="id">

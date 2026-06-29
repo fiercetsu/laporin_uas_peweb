@@ -1,6 +1,13 @@
 <?php
 declare(strict_types=1);
 
+// ── Auth Guard ──────────────────────────────────────────────────────
+$rt = requireRtWeb();
+
+// ── Ambil data untuk tampilan ───────────────────────────────────────
+$reports = getRtEmergencyReports();
+$summary = getRtEmergencySummary();
+
 $user = $rt;
 $role = 'rt';
 $stats = [

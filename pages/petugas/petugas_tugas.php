@@ -1,4 +1,42 @@
-<?php declare(strict_types=1); ?>
+<?php
+declare(strict_types=1);
+
+// ── Auth Guard ──────────────────────────────────────────────────────
+$petugas = requirePetugasWeb();
+
+// ── Handle POST (PRG) ───────────────────────────────────────────────
+if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
+    try {
+        verifyCsrfToken();
+        [$errors, $success] = processPetugasTaskForm();
+    } catch (Throwable $e) {
+        $errors = ['Gagal memproses: ' . $e->getMessage()];
+        $success = '';
+    }
+    $_SESSION['flash'] = ['errors' => $errors, 'success' => $success];
+    redirectTo('/petugas-tugas');
+}
+
+// ── Read flash ──────────────────────────────────────────────────────
+$flash = $_SESSION['flash'] ?? [];
+unset($_SESSION['flash']);
+$errors = $flash['errors'] ?? [];
+$success = $flash['success'] ?? '';
+
+// ── Ambil data untuk tampilan ───────────────────────────────────────
+$tasks = getPetugasActiveTasks((int)$petugas['id']);
+$csrf = e(csrfToken());
+
+$photosByReport = [];
+$ids = array_map(static fn(array $t): int => (int)$t['id'], $tasks);
+if ($ids !== []) {
+    foreach (getReportsPhotos($ids) as $photo) {
+        $photosByReport[(int)$photo['laporan_id']][] = [
+            'url' => urlFor('/backend/' . $photo['path_file']),
+        ];
+    }
+}
+?>
 <!doctype html>
 <html lang="id">
 <head>

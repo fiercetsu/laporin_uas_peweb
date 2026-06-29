@@ -1,5 +1,28 @@
 <?php
 declare(strict_types=1);
+
+// ── Handle POST ─────────────────────────────────────────────────────
+$errors = [];
+$success = '';
+
+if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
+    try {
+        verifyCsrfToken();
+        unset($_SESSION['session_error']);
+        [$errors, $success] = processLoginForm();
+    } catch (Throwable $e) {
+        $errors = ['Gagal memproses login: ' . $e->getMessage()];
+    }
+}
+
+if (!empty($_SESSION['session_error'])) {
+    unset($_SESSION['session_error']);
+}
+
+// ── Setup variabel untuk tampilan ───────────────────────────────────
+$action = urlFor('/login');
+$csrf = e(csrfToken());
+$email = e((string)($_POST['email'] ?? ''));
 ?>
 <!doctype html>
 <html lang="id">

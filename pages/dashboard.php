@@ -1,6 +1,22 @@
 <?php
 declare(strict_types=1);
 
+// ── Auth Guard ──────────────────────────────────────────────────────
+if (empty($_SESSION['auth_user'])) {
+    redirectTo('/login');
+}
+
+// ── Setup variabel untuk tampilan ───────────────────────────────────
+$user = $_SESSION['auth_user'];
+$dashboard = buildDashboardData($user);
+$categories = [];
+$reportAction = urlFor('/laporan');
+$reportCsrf = e(csrfToken());
+
+if (($user['role'] ?? '') === 'warga') {
+    $categories = getActiveCategories();
+}
+
 $role = (string)($user['role'] ?? 'warga');
 $roleTitles = [
     'warga' => 'Dashboard Warga',
